@@ -867,6 +867,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 />
                                             </div>
                                             <div className="flex gap-2">
+                                                <button className="nexus-btn w-full justify-center" onClick={() => { setEditCustomer(c); setIsEditCustomerOpen(true); }}><Edit size={16}/> Edit</button>
                                                 <button className="nexus-btn w-full justify-center" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><ShoppingCart size={16}/> History</button>
                                                 <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
                                             </div>
