@@ -5,7 +5,7 @@ import Select from 'react-select';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, Package, ShoppingCart, Users, UserX, UsersRound, MapPin, 
-    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X
+    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X, Edit
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -174,6 +174,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
     // Forms state
     const [newProduct, setNewProduct] = useState({ name: '', sku: '', price: '', stock_quantity: '' });
     const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', email: '', phone: '' });
+    const [editCustomer, setEditCustomer] = useState(null);
+    const [isEditCustomerOpen, setIsEditCustomerOpen] = useState(false);
     const [emailForm, setEmailForm] = useState({ subject: '', message: '' });
 
     const generateSKU = () => {
@@ -285,6 +287,22 @@ export default function Dashboard({ products, employees, customers, sales, branc
                 setIsNewCustomerOpen(false);
                 setNewCustomer({ first_name: '', last_name: '', email: '', phone: '' });
                 toast.success('Customer created successfully!');
+            },
+            onError: (errors) => {
+                Object.values(errors).forEach(err => toast.error(err));
+            }
+        });
+    };
+
+    const handleUpdateCustomer = (e) => {
+        e.preventDefault();
+        router.put(`/customers/${editCustomer.id}`, editCustomer, {
+            preserveState: true,
+            preserveScroll: true,
+            onSuccess: () => {
+                setIsEditCustomerOpen(false);
+                setEditCustomer(null);
+                toast.success('Customer updated successfully!');
             },
             onError: (errors) => {
                 Object.values(errors).forEach(err => toast.error(err));
@@ -728,6 +746,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
+                                                    <button className="nexus-btn w-full justify-center" onClick={() => { setEditCustomer(c); setIsEditCustomerOpen(true); }}><Edit size={16}/> Edit</button>
                                                     <button className="nexus-btn w-full justify-center" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><ShoppingCart size={16}/> History</button>
                                                     <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
                                                     {c.phone ? (
@@ -1198,6 +1217,44 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             <div className="mt-4 flex justify-end gap-3">
                                 <button type="button" className="nexus-btn" onClick={() => setIsNewCustomerOpen(false)}>Cancel</button>
                                 <button type="submit" className="nexus-btn primary">Create customer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Edit Customer Modal */}
+            {isEditCustomerOpen && editCustomer && (
+                <div className="nexus-modal-overlay">
+                    <div className="nexus-modal max-w-[500px]">
+                        <div className="nexus-modal-header">
+                            <div className="nexus-page-title">
+                                <h1>Edit Customer</h1>
+                            </div>
+                            <button className="nexus-icon-btn" onClick={() => setIsEditCustomerOpen(false)}><X size={24} /></button>
+                        </div>
+                        <form onSubmit={handleUpdateCustomer} className="nexus-modal-body">
+                            <div className="flex gap-4">
+                                <div className="nexus-form-group flex-1">
+                                    <label>First Name</label>
+                                    <input type="text" className="nexus-input" value={editCustomer.first_name} onChange={e => setEditCustomer({...editCustomer, first_name: e.target.value})} required/>
+                                </div>
+                                <div className="nexus-form-group flex-1">
+                                    <label>Last Name</label>
+                                    <input type="text" className="nexus-input" value={editCustomer.last_name} onChange={e => setEditCustomer({...editCustomer, last_name: e.target.value})} required/>
+                                </div>
+                            </div>
+                            <div className="nexus-form-group">
+                                <label>Email Address</label>
+                                <input type="email" className="nexus-input" value={editCustomer.email} onChange={e => setEditCustomer({...editCustomer, email: e.target.value})} required/>
+                            </div>
+                            <div className="nexus-form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" className="nexus-input" value={editCustomer.phone || ''} onChange={e => setEditCustomer({...editCustomer, phone: e.target.value})} />
+                            </div>
+                            <div className="mt-4 flex justify-end gap-3">
+                                <button type="button" className="nexus-btn" onClick={() => setIsEditCustomerOpen(false)}>Cancel</button>
+                                <button type="submit" className="nexus-btn primary">Save changes</button>
                             </div>
                         </form>
                     </div>

@@ -23,6 +23,20 @@ class CustomerController extends Controller
         return redirect()->back()->with('success', 'Customer created successfully.');
     }
 
+    public function update(Request $request, Customer $customer)
+    {
+        $validated = $request->validate([
+            'first_name' => 'required|string|max:255',
+            'last_name' => 'required|string|max:255',
+            'email' => 'required|email|unique:customers,email,' . $customer->id,
+            'phone' => 'nullable|string|max:20',
+        ]);
+
+        $customer->update($validated);
+
+        return redirect()->back()->with('success', 'Customer updated successfully.');
+    }
+
     public function assign(Request $request, Customer $customer)
     {
         $validated = $request->validate([

@@ -29,6 +29,7 @@ Route::post('/sales', [\App\Http\Controllers\SaleController::class, 'store'])->m
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/products', [\App\Http\Controllers\ProductController::class, 'store'])->name('products.store');
     Route::post('/customers', [\App\Http\Controllers\CustomerController::class, 'store'])->name('customers.store');
+    Route::put('/customers/{customer}', [\App\Http\Controllers\CustomerController::class, 'update'])->name('customers.update');
     Route::post('/customers/{customer}/assign', [\App\Http\Controllers\CustomerController::class, 'assign'])->name('customers.assign');
     Route::post('/customers/{customer}/email', [\App\Http\Controllers\CustomerController::class, 'email'])->name('customers.email');
 });
