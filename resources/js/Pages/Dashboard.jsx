@@ -422,7 +422,11 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const employeeOptions = employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }));
 
     // Derived Search Data
-    const filteredProductsGlobal = products.filter(p => p.name.toLowerCase().includes(globalSearch.toLowerCase()) || p.sku.toLowerCase().includes(globalSearch.toLowerCase()));
+    const filteredProductsGlobal = products.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(globalSearch.toLowerCase()) || p.sku.toLowerCase().includes(globalSearch.toLowerCase());
+        const matchesBranch = selectedBranch === 'all' || p.branches?.some(b => b.id === selectedBranch);
+        return matchesSearch && matchesBranch;
+    });
     const paginatedProducts = sortData(filteredProductsGlobal).slice((pageInventory - 1) * itemsPerPage, pageInventory * itemsPerPage);
 
     const activeCustomers = customers.filter(c => !lostCustomers.find(lc => lc.id === c.id));
