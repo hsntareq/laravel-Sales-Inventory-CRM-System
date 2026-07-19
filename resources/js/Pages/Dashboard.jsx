@@ -98,6 +98,15 @@ export default function Dashboard({ products, employees, customers, sales, branc
         try { return JSON.parse(localStorage.getItem('pos_savedCarts')) || {}; } catch(e) { return {}; }
     });
     const [viewingInvoiceSale, setViewingInvoiceSale] = useState(null);
+    const [viewingBranch, setViewingBranch] = useState(null);
+
+    const handleToggleBranchStatus = (branchId, isActive) => {
+        router.patch(`/branches/${branchId}/toggle-status`, { is_active: isActive }, {
+            preserveScroll: true,
+            onSuccess: () => toast.success(`Branch status updated!`)
+        });
+    };
+
     const [selectedCustomer, setSelectedCustomer] = useState(() => {
         try { return JSON.parse(localStorage.getItem('pos_selectedCustomer')) || null; } catch(e) { return null; }
     });
@@ -1063,11 +1072,18 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <div key={branch.id} className="nexus-card">
                                         <h3 className="font-bold text-lg mb-1">{branch.name}</h3>
                                         <p className="text-sm text-gray-500 flex items-center gap-1 mb-4"><MapPin size={14}/> {branch.address || 'Address not set'}</p>
-                                        <div className="flex justify-between border-t border-gray-100 pt-4">
+                                        <div className="flex justify-between items-end border-t border-gray-100 pt-4">
                                             <div>
                                                 <div className="text-xs text-gray-500 mb-1">Status</div>
-                                                <div className="font-bold text-lg text-green-600">Active</div>
+                                                <div className="flex items-center gap-2">
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                        <input type="checkbox" className="sr-only peer" checked={branch.is_active} onChange={(e) => handleToggleBranchStatus(branch.id, e.target.checked)} />
+                                                        <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                    </label>
+                                                    <span className={`text-sm font-bold ${branch.is_active ? 'text-green-600' : 'text-gray-400'}`}>{branch.is_active ? 'Active' : 'Inactive'}</span>
+                                                </div>
                                             </div>
+                                            <button className="nexus-btn primary" onClick={() => setViewingBranch(branch)}>Overview</button>
                                         </div>
                                     </div>
                                 ))}
@@ -1142,6 +1158,49 @@ export default function Dashboard({ products, employees, customers, sales, branc
                         <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-white">
                             <button onClick={() => setViewingInvoiceSale(null)} className="nexus-btn">Close</button>
                             <a href={`/sales/${viewingInvoiceSale.id}/invoice`} target="_blank" className="nexus-btn primary flex items-center gap-2"><Download size={16}/> Download PDF</a>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Branch Overview Modal */}
+            {viewingBranch && (
+                <div className="nexus-modal-overlay">
+                    <div className="nexus-modal w-full max-w-lg">
+                        <div className="nexus-modal-header border-b border-gray-100 pb-4">
+                            <div>
+                                <h2 className="text-xl font-bold">{viewingBranch.name} Overview</h2>
+                                <p className="text-sm text-gray-500 mt-1">{viewingBranch.address}</p>
+                            </div>
+                            <button className="nexus-icon-btn" onClick={() => setViewingBranch(null)}><X size={20} /></button>
+                        </div>
+                        <div className="nexus-modal-content py-6">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                    <div className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Total Sales</div>
+                                    <div className="text-2xl font-bold text-slate-800">
+                                        {sales.filter(s => s.branch_id === viewingBranch.id).length}
+                                    </div>
+                                </div>
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                    <div className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Products Assigned</div>
+                                    <div className="text-2xl font-bold text-slate-800">
+                                        {products.filter(p => p.branches?.some(b => b.id === viewingBranch.id)).length}
+                                    </div>
+                                </div>
+                                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 col-span-2">
+                                    <div className="text-xs text-gray-500 mb-1 uppercase tracking-wider font-semibold">Current Status</div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <div className={`w-3 h-3 rounded-full ${viewingBranch.is_active ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                        <span className={`font-bold ${viewingBranch.is_active ? 'text-green-600' : 'text-gray-500'}`}>
+                                            {viewingBranch.is_active ? 'Operating (Active)' : 'Closed (Inactive)'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="nexus-modal-footer border-t border-gray-100 pt-4 flex justify-end">
+                            <button className="nexus-btn primary" onClick={() => setViewingBranch(null)}>Done</button>
                         </div>
                     </div>
                 </div>

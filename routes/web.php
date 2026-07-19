@@ -33,6 +33,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/customers/{customer}', [\App\Http\Controllers\CustomerController::class, 'update'])->name('customers.update');
     Route::post('/customers/{customer}/assign', [\App\Http\Controllers\CustomerController::class, 'assign'])->name('customers.assign');
     Route::post('/customers/{customer}/email', [\App\Http\Controllers\CustomerController::class, 'email'])->name('customers.email');
+    Route::patch('/branches/{branch}/toggle-status', [\App\Http\Controllers\BranchController::class, 'toggleStatus'])->name('branches.toggle-status');
 });
 
 Route::middleware('auth')->group(function () {

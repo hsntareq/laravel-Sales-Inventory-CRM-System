@@ -10,7 +10,11 @@ class Branch extends Model
     /** @use HasFactory<\Database\Factories\BranchFactory> */
     use \Illuminate\Database\Eloquent\Factories\HasFactory;
 
-    protected $fillable = ['name', 'address'];
+    protected $fillable = ['name', 'address', 'is_active'];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
 
     public function products()
     {

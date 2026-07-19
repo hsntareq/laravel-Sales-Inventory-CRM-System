@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sale;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Requests\StoreSaleRequest;
 use App\Services\SalesService;
 use App\Exceptions\InsufficientStockException;
@@ -34,5 +36,12 @@ class SaleController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'An error occurred while processing the sale: ' . $e->getMessage()]);
         }
+    }
+
+    public function invoice(Sale $sale)
+    {
+        $sale->load(['customer', 'items.product', 'branch']);
+        $pdf = Pdf::loadView('pdf.invoice', ['sale' => $sale]);
+        return $pdf->download("invoice_{$sale->invoice_number}.pdf");
     }
 }
