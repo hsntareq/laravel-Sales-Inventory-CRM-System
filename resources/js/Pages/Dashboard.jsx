@@ -279,6 +279,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const handleCreateCustomer = (e) => {
         e.preventDefault();
         router.post('/customers', newCustomer, {
+            preserveState: true,
+            preserveScroll: true,
             onSuccess: () => {
                 setIsNewCustomerOpen(false);
                 setNewCustomer({ first_name: '', last_name: '', email: '' });
@@ -338,7 +340,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
     // Filtered Data
     const filteredProducts = products.filter(p => p.name.toLowerCase().includes(productFilter.toLowerCase()) || p.sku.toLowerCase().includes(productFilter.toLowerCase()));
     const lostCustomers = customers.filter(c => {
-        if (!c.last_purchase_date) return true; // Never purchased
+        if (!c.last_purchase_date) return false; // Never purchased, keep as active
         const daysSince = Math.floor((new Date() - new Date(c.last_purchase_date)) / (1000 * 60 * 60 * 24));
         return daysSince >= inactivityThreshold;
     });
