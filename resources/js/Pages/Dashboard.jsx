@@ -567,12 +567,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </div>
                                 <div className="flex gap-3 items-center">
                                     <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search sales..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
-                                <div className="flex gap-3 items-center">
-                                    <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search sales..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
                                     <button className="nexus-btn primary" onClick={() => setIsPosOpen(true)}>
                                         <Plus size={18} /> New sale
                                     </button>
-                                </div>
                                 </div>
                             </div>
 
