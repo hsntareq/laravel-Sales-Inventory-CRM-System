@@ -5,7 +5,7 @@ import Select from 'react-select';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, Package, ShoppingCart, Users, UserX, UsersRound, MapPin, 
-    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X, Edit
+    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X, Edit, MoreVertical
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -100,12 +100,21 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const [selectedCustomer, setSelectedCustomer] = useState(() => {
         try { return JSON.parse(localStorage.getItem('pos_selectedCustomer')) || null; } catch(e) { return null; }
     });
+    const [hideOutOfStock, setHideOutOfStock] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('pos_hideOutOfStock')) || false; } catch(e) { return false; }
+    });
+    const [compactView, setCompactView] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('pos_compactView')) || false; } catch(e) { return false; }
+    });
+    const [isPosSettingsOpen, setIsPosSettingsOpen] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('pos_cart', JSON.stringify(cart));
         localStorage.setItem('pos_savedCarts', JSON.stringify(savedCarts));
         localStorage.setItem('pos_selectedCustomer', JSON.stringify(selectedCustomer));
-    }, [cart, savedCarts, selectedCustomer]);
+        localStorage.setItem('pos_hideOutOfStock', JSON.stringify(hideOutOfStock));
+        localStorage.setItem('pos_compactView', JSON.stringify(compactView));
+    }, [cart, savedCarts, selectedCustomer, hideOutOfStock, compactView]);
     
     const formatNumber = (num) => {
         const val = typeof num === 'string' ? parseFloat(num) : num;
@@ -386,7 +395,12 @@ export default function Dashboard({ products, employees, customers, sales, branc
     ];
 
     // Filtered Data
-    const filteredProducts = products.filter(p => p.name.toLowerCase().includes(productFilter.toLowerCase()) || p.sku.toLowerCase().includes(productFilter.toLowerCase()));
+    const filteredProducts = products.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(productFilter.toLowerCase()) || p.sku.toLowerCase().includes(productFilter.toLowerCase());
+        const stock = getBranchStock(p, selectedBranch);
+        const stockOk = hideOutOfStock ? stock > 0 : true;
+        return matchesSearch && stockOk;
+    });
     const lostCustomers = customers.filter(c => {
         if (!c.last_purchase_date) return false; // Never purchased, keep as active
         const daysSince = Math.floor((new Date() - new Date(c.last_purchase_date)) / (1000 * 60 * 60 * 24));
@@ -1097,14 +1111,50 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             placeholder="Select store..."
                                         />
                                     </div>
+                                    <div className="relative">
+                                        <button 
+                                            className="nexus-icon-btn"
+                                            style={{ height: '42px', width: '42px' }}
+                                            onClick={() => setIsPosSettingsOpen(!isPosSettingsOpen)}
+                                        >
+                                            <MoreVertical size={20} />
+                                        </button>
+                                        {isPosSettingsOpen && (
+                                            <div className="absolute right-0 top-12 w-56 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                                                <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
+                                                    <h3 className="font-semibold text-sm text-slate-800">Display Settings</h3>
+                                                </div>
+                                                <div className="p-2 flex flex-col gap-1">
+                                                    <label className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 w-4 h-4"
+                                                            checked={hideOutOfStock}
+                                                            onChange={(e) => setHideOutOfStock(e.target.checked)}
+                                                        />
+                                                        <span className="text-sm font-medium text-slate-700">Hide out of stock</span>
+                                                    </label>
+                                                    <label className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer transition-colors">
+                                                        <input 
+                                                            type="checkbox" 
+                                                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 w-4 h-4"
+                                                            checked={compactView}
+                                                            onChange={(e) => setCompactView(e.target.checked)}
+                                                        />
+                                                        <span className="text-sm font-medium text-slate-700">Compact view</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 overflow-y-auto content-start">
                                     {filteredProducts.map(p => (
-                                        <div key={p.id} className="nexus-card cursor-pointer hover:border-slate-400" onClick={() => addToCart(p)}>
-                                            <div className="font-medium">{p.name}</div>
-                                            <div className="text-xs text-gray-400 font-mono mb-4">{p.sku}</div>
-                                            <div className="flex justify-between items-center">
-                                                <div className="font-bold text-lg">${formatNumber(p.price)}</div>
+                                        <div key={p.id} className={`nexus-card cursor-pointer hover:border-slate-400 ${compactView ? 'p-3' : ''}`} onClick={() => addToCart(p)}>
+                                            <div className={`font-medium ${compactView ? 'text-sm truncate' : ''}`}>{p.name}</div>
+                                            {!compactView && <div className="text-xs text-gray-400 font-mono mb-4">{p.sku}</div>}
+                                            <div className={`flex justify-between items-center ${compactView ? 'mt-2' : ''}`}>
+                                                <div className={`font-bold ${compactView ? 'text-base' : 'text-lg'}`}>${formatNumber(p.price)}</div>
                                                 {getBranchStock(p, selectedBranch) <= 0 ? (
                                                     <span className="nexus-badge soft-red">Out</span>
                                                 ) : (
