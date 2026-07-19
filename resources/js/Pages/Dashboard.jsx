@@ -479,6 +479,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
     });
 
     // React Select Options
+    const activeBranches = branches.filter(b => b.is_active);
     const customerOptions = customers.map(c => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }));
     const employeeOptions = employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }));
 
@@ -724,7 +725,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     '&:hover': { borderColor: '#cbd5e1' }
                                                 })
                                             }}
-                                            options={[{ value: 'all', label: 'All Branches' }, ...branches.map(b => ({ value: b.id, label: b.name }))]}
+                                            options={[{ value: 'all', label: 'All Branches' }, ...activeBranches.map(b => ({ value: b.id, label: b.name }))]}
                                             value={selectedBranch === 'all' ? { value: 'all', label: 'All Branches' } : selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
                                             onChange={(opt) => setSelectedBranch(opt.value)}
                                             placeholder="Filter by branch..."
@@ -811,7 +812,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     '&:hover': { borderColor: '#cbd5e1' }
                                                 })
                                             }}
-                                            options={[{ value: 'all', label: 'All Branches' }, ...branches.map(b => ({ value: b.id, label: b.name }))]}
+                                            options={[{ value: 'all', label: 'All Branches' }, ...activeBranches.map(b => ({ value: b.id, label: b.name }))]}
                                             value={selectedBranch === 'all' ? { value: 'all', label: 'All Branches' } : selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
                                             onChange={(opt) => setSelectedBranch(opt.value)}
                                             placeholder="Filter by branch..."
@@ -1334,7 +1335,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 }),
                                                 valueContainer: base => ({ ...base, padding: '0 12px' })
                                             }}
-                                            options={[{ value: 'all', label: 'All Branches' }, ...branches.map(b => ({ value: b.id, label: b.name }))]}
+                                            options={[{ value: 'all', label: 'All Branches' }, ...activeBranches.map(b => ({ value: b.id, label: b.name }))]}
                                             value={selectedBranch === 'all' ? { value: 'all', label: 'All Branches' } : selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
                                             onChange={(opt) => {
                                                 setSelectedBranch(opt.value);
