@@ -22,7 +22,9 @@ This project is a technical assessment submission for the Full-Stack Software En
 
 ### Phase 5: API Endpoints & Frontend
 - **React Frontend:** Built an interactive, single-page application dashboard using React and custom CSS (avoiding Tailwind defaults for a unique aesthetic). Features include POS functionality, Catalog Viewer, Customer Logs, and a KPI leaderboard.
+- **Multi-Branch Support:** Implemented global branch selection and branch-specific inventory tracking within the POS.
 - **E-Commerce REST API:** Developed secure API endpoints using Laravel API Resources (`ProductResource`) to expose clean inventory data (`/api/products`).
+- **Invoice Generation:** Generate and download PDF invoices on-the-fly for any completed sale directly from the dashboard.
 - **Invoice Mailer:** Automatically sends an `InvoiceMail` to the customer upon a completed sale via event listeners.
 
 ### Phase 6: Finalization & Testing
