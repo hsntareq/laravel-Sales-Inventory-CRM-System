@@ -37,7 +37,7 @@ This project is a technical assessment submission for the Full-Stack Software En
 ### 1. Environment Configuration
 Clone the repository and install all dependencies:
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/hsntareq/laravel-Sales-Inventory-CRM-System.git
 cd laravel-Sales-Inventory-CRM-System
 composer install
 npm install
