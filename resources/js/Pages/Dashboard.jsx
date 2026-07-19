@@ -252,12 +252,16 @@ export default function Dashboard({ products, employees, customers, sales, branc
             items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity }))
         }, {
             onSuccess: () => {
+                const currentKey = selectedCustomer ? String(selectedCustomer.value) : 'walk-in';
                 setSavedCarts(prev => {
                     const newSaved = { ...prev };
-                    if (selectedCustomer) delete newSaved[selectedCustomer.value];
-                    setCart(newSaved['walk-in'] || []);
+                    delete newSaved[currentKey];
                     return newSaved;
                 });
+                
+                const nextSaved = savedCarts['walk-in'] || { items: [], branch: selectedBranch };
+                setCart(currentKey === 'walk-in' ? [] : (nextSaved.items || []));
+                if (currentKey !== 'walk-in' && nextSaved.branch) setSelectedBranch(nextSaved.branch);
                 setIsPosOpen(false);
                 setSelectedCustomer(null);
                 toast.dismiss(loadingToast);
@@ -1063,11 +1067,14 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             const prevKey = selectedCustomer ? selectedCustomer.value : 'walk-in';
                                             const nextKey = opt ? opt.value : 'walk-in';
                                             
-                                            setSavedCarts(prev => {
-                                                const newSaved = { ...prev, [prevKey]: cart };
-                                                setCart(newSaved[nextKey] || []);
-                                                return newSaved;
-                                            });
+                                            setSavedCarts(prev => ({
+                                                ...prev, 
+                                                [prevKey]: { items: cart, branch: selectedBranch }
+                                            }));
+                                            
+                                            const nextSaved = savedCarts[nextKey] || { items: [], branch: selectedBranch };
+                                            setCart(nextSaved.items || []);
+                                            if (nextSaved.branch) setSelectedBranch(nextSaved.branch);
                                             
                                             setSelectedCustomer(opt);
                                         }}
@@ -1076,7 +1083,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     />
                                     {(() => {
                                         const currentKey = selectedCustomer ? String(selectedCustomer.value) : 'walk-in';
-                                        const savedKeys = Object.keys(savedCarts).filter(key => key !== currentKey && savedCarts[key].length > 0);
+                                        const savedKeys = Object.keys(savedCarts).filter(key => key !== currentKey && savedCarts[key]?.items?.length > 0);
                                         
                                         if (savedKeys.length === 0) return null;
                                         
@@ -1090,11 +1097,14 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                                 className="cursor-pointer font-medium hover:text-blue-600 transition-colors"
                                                                 onClick={() => {
                                                                     const prevKey = selectedCustomer ? String(selectedCustomer.value) : 'walk-in';
-                                                                    setSavedCarts(prev => {
-                                                                        const newSaved = { ...prev, [prevKey]: cart };
-                                                                        setCart(newSaved[key] || []);
-                                                                        return newSaved;
-                                                                    });
+                                                                    setSavedCarts(prev => ({
+                                                                        ...prev, 
+                                                                        [prevKey]: { items: cart, branch: selectedBranch }
+                                                                    }));
+                                                                    
+                                                                    const nextSaved = savedCarts[key] || { items: [], branch: selectedBranch };
+                                                                    setCart(nextSaved.items || []);
+                                                                    if (nextSaved.branch) setSelectedBranch(nextSaved.branch);
                                                                     if (key === 'walk-in') {
                                                                         setSelectedCustomer(null);
                                                                     } else {
@@ -1102,7 +1112,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                                     }
                                                                 }}
                                                             >
-                                                                {label} ({savedCarts[key].length})
+                                                                {label} ({savedCarts[key]?.items?.length || 0})
                                                             </span>
                                                             <button 
                                                                 className="ml-2 text-slate-400 hover:text-red-500 transition-colors"
