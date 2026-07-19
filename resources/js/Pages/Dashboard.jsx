@@ -410,7 +410,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                     <div className="nexus-search"></div>
                     <div className="nexus-top-actions flex items-center gap-4">
                         <button 
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-full shadow-lg shadow-indigo-200 transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
+                            className="nexus-btn"
                             onClick={() => setIsPosOpen(true)}
                         >
                             <ShoppingCart size={18} />
