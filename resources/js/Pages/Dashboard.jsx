@@ -1219,6 +1219,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                     </div>
                 </div>
             )}
+            <Toaster position="top-right" containerStyle={{ zIndex: 999999 }} />
         </NexusLayout>
     );
 }
