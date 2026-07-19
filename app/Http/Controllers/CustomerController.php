@@ -55,11 +55,10 @@ class CustomerController extends Controller
             'message' => 'required|string',
         ]);
 
-        // Simulate email sending
-        // Mail::raw($request->message, function ($message) use ($customer, $request) {
-        //     $message->to($customer->email)
-        //             ->subject($request->subject);
-        // });
+        Mail::raw($request->message, function ($message) use ($customer, $request) {
+            $message->to($customer->email)
+                    ->subject($request->subject);
+        });
 
         return redirect()->back()->with('success', 'Email sent successfully to ' . $customer->email);
     }
