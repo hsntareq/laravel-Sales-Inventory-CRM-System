@@ -16,7 +16,12 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const initialTab = typeof window !== 'undefined' 
         ? new URLSearchParams(window.location.search).get('tab') || 'dashboard'
         : 'dashboard';
-    const [activeTab, setActiveTab] = useState(initialTab);
+    const [activeTab, setActiveTabRaw] = useState(initialTab);
+    const setActiveTab = (tab) => {
+        setActiveTabRaw(tab);
+        setSortField(null);
+        setSortOrder('asc');
+    };
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -27,6 +32,42 @@ export default function Dashboard({ products, employees, customers, sales, branc
     }, [activeTab]);
 
     const [selectedBranch, setSelectedBranch] = useState(branches.length > 0 ? branches[0].id : '');
+
+    const sortData = (array) => {
+        return [...array].sort((a, b) => {
+            if (!sortField) return 0;
+            
+            let valA = a[sortField];
+            let valB = b[sortField];
+            
+            if (sortField === 'customer.first_name') {
+                valA = (a.customer?.first_name + ' ' + a.customer?.last_name).toLowerCase();
+                valB = (b.customer?.first_name + ' ' + b.customer?.last_name).toLowerCase();
+            } else if (sortField === 'first_name') {
+                valA = (a.first_name + ' ' + a.last_name).toLowerCase();
+                valB = (b.first_name + ' ' + b.last_name).toLowerCase();
+            } else if (typeof valA === 'string') {
+                valA = valA.toLowerCase();
+                if (typeof valB === 'string') valB = valB.toLowerCase();
+            }
+            
+            if (!valA && valA !== 0) valA = '';
+            if (!valB && valB !== 0) valB = '';
+            
+            if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+            if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+            return 0;
+        });
+    };
+    
+    const SortableHeader = ({ field, label, width }) => (
+        <th className="cursor-pointer hover:bg-slate-50 transition-colors" style={width ? { width } : {}} onClick={() => toggleSort(field)}>
+            <div className="flex items-center gap-1">
+                {label}
+                {sortField === field && <span className="text-gray-400">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+            </div>
+        </th>
+    );
 
     const toggleSort = (field) => {
         if (sortField === field) {
@@ -289,41 +330,29 @@ export default function Dashboard({ products, employees, customers, sales, branc
 
     // Derived Search Data
     const filteredProductsGlobal = products.filter(p => p.name.toLowerCase().includes(globalSearch.toLowerCase()) || p.sku.toLowerCase().includes(globalSearch.toLowerCase()));
-    const paginatedProducts = filteredProductsGlobal.slice((pageInventory - 1) * itemsPerPage, pageInventory * itemsPerPage);
+    const paginatedProducts = sortData(filteredProductsGlobal).slice((pageInventory - 1) * itemsPerPage, pageInventory * itemsPerPage);
 
     const activeCustomers = customers.filter(c => !lostCustomers.find(lc => lc.id === c.id));
     const filteredActiveCustomers = activeCustomers.filter(c => c.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || c.last_name.toLowerCase().includes(globalSearch.toLowerCase()) || c.email.toLowerCase().includes(globalSearch.toLowerCase()));
-    const paginatedActiveCustomers = filteredActiveCustomers.slice((pageActiveCustomers - 1) * itemsPerPage, pageActiveCustomers * itemsPerPage);
+    const paginatedActiveCustomers = sortData(filteredActiveCustomers).slice((pageActiveCustomers - 1) * itemsPerPage, pageActiveCustomers * itemsPerPage);
     
     const filteredLostCustomers = lostCustomers.filter(c => {
         const matchesSearch = c.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || c.last_name.toLowerCase().includes(globalSearch.toLowerCase()) || c.email.toLowerCase().includes(globalSearch.toLowerCase());
         const matchesFilter = assignmentFilter === 'all' ? true : (assignmentFilter === 'assigned' ? c.assigned_employee_id !== null : c.assigned_employee_id === null);
         return matchesSearch && matchesFilter;
     });
-    const sortedLostCustomers = [...filteredLostCustomers].sort((a, b) => {
-        let valA = a[sortField];
-        let valB = b[sortField];
-        if (sortField === 'first_name') {
-            valA = (a.first_name + ' ' + a.last_name).toLowerCase();
-            valB = (b.first_name + ' ' + b.last_name).toLowerCase();
-        }
-        if (!valA) valA = '';
-        if (!valB) valB = '';
-        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
-        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
-        return 0;
-    });
+    const sortedLostCustomers = sortData(filteredLostCustomers);
     const paginatedLostCustomers = sortedLostCustomers.slice((pageLostCustomers - 1) * itemsPerPage, pageLostCustomers * itemsPerPage);
 
     const filteredSales = sales.filter(s => s.customer.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || s.customer.last_name.toLowerCase().includes(globalSearch.toLowerCase()));
     const [pageSales, setPageSales] = useState(1);
-    const paginatedSales = filteredSales.slice((pageSales - 1) * itemsPerPage, pageSales * itemsPerPage);
+    const paginatedSales = sortData(filteredSales).slice((pageSales - 1) * itemsPerPage, pageSales * itemsPerPage);
 
     const filteredEmployees = employees.sort((a,b) => b.kpi_score - a.kpi_score).filter(e => e.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || e.last_name.toLowerCase().includes(globalSearch.toLowerCase()) || e.email.toLowerCase().includes(globalSearch.toLowerCase()));
-    const paginatedEmployees = filteredEmployees.slice((pageEmployees - 1) * itemsPerPage, pageEmployees * itemsPerPage);
+    const paginatedEmployees = sortData(filteredEmployees).slice((pageEmployees - 1) * itemsPerPage, pageEmployees * itemsPerPage);
     
     const filteredBranches = branches.filter(b => b.name.toLowerCase().includes(globalSearch.toLowerCase()) || (b.location || '').toLowerCase().includes(globalSearch.toLowerCase()));
-    const paginatedBranches = filteredBranches.slice((pageBranches - 1) * itemsPerPage, pageBranches * itemsPerPage);
+    const paginatedBranches = sortData(filteredBranches).slice((pageBranches - 1) * itemsPerPage, pageBranches * itemsPerPage);
 
     return (
         <NexusLayout activeTab={activeTab} onTabChange={setActiveTab}>
@@ -513,9 +542,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <table className="nexus-table">
                                         <thead>
                                             <tr>
-                                                <th>Product</th>
-                                                <th>SKU</th>
-                                                <th>Price</th>
+                                                <SortableHeader field="name" label="Product" />
+                                                <SortableHeader field="sku" label="SKU" />
+                                                <SortableHeader field="price" label="Price" />
                                                 <th>Stock</th>
                                             </tr>
                                         </thead>
@@ -577,11 +606,11 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 <table className="nexus-table">
                                     <thead>
                                         <tr>
-                                            <th>Invoice</th>
-                                            <th>Date</th>
-                                            <th>Customer</th>
-                                            <th>Total</th>
-                                            <th>Status</th>
+                                            <SortableHeader field="invoice_number" label="Invoice" />
+                                            <SortableHeader field="created_at" label="Date" />
+                                            <SortableHeader field="customer.first_name" label="Customer" />
+                                            <SortableHeader field="total_amount" label="Total" />
+                                            <SortableHeader field="status" label="Status" />
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -625,9 +654,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <table className="nexus-table">
                                         <thead>
                                             <tr>
-                                                <th>Customer</th>
-                                                <th>Contact</th>
-                                                <th>Last Purchase</th>
+                                                <SortableHeader field="first_name" label="Customer" />
+                                                <SortableHeader field="email" label="Contact" />
+                                                <SortableHeader field="last_purchase_date" label="Last Purchase" />
                                                 <th>Status</th>
                                                 <th>Actions</th>
                                             </tr>
@@ -826,9 +855,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <table className="nexus-table">
                                         <thead>
                                             <tr>
-                                                <th>Employee</th>
-                                                <th>Email</th>
-                                                <th>KPI Score</th>
+                                                <SortableHeader field="first_name" label="Employee" />
+                                                <SortableHeader field="email" label="Email" />
+                                                <SortableHeader field="kpi_score" label="KPI Score" />
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -1114,9 +1143,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 <table className="nexus-table">
                                     <thead>
                                         <tr>
-                                            <th>Date</th>
+                                            <SortableHeader field="created_at" label="Date" />
                                             <th>Items</th>
-                                            <th>Total</th>
+                                            <SortableHeader field="total_amount" label="Total" />
                                         </tr>
                                     </thead>
                                     <tbody>
