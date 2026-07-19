@@ -18,7 +18,7 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard', [
         'products' => \App\Models\Product::with('branches')->get(),
         'employees' => \App\Models\Employee::all(),
-        'customers' => \App\Models\Customer::with('assignedEmployee')->get(),
+        'customers' => \App\Models\Customer::with(['assignedEmployee', 'sales.items.product'])->get(),
         'sales' => \App\Models\Sale::with('customer', 'items.product')->latest()->take(50)->get(),
         'branches' => \App\Models\Branch::all(),
     ]);
@@ -34,6 +34,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/billing', function () { return Inertia::render('Placeholder', ['title' => 'Billing']); })->name('billing');
+    Route::get('/settings', function () { return Inertia::render('Placeholder', ['title' => 'Settings']); })->name('settings');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
