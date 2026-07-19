@@ -15,6 +15,7 @@
     <h2>Invoice #{{ $sale->id }}</h2>
     <p><strong>Date:</strong> {{ $sale->created_at->format('M d, Y') }}</p>
     <p><strong>Customer:</strong> {{ $sale->customer->first_name }} {{ $sale->customer->last_name }}</p>
+    <p><strong>Branch:</strong> {{ $sale->branch ? $sale->branch->name : 'N/A' }}</p>
     
     <table>
         <thead>

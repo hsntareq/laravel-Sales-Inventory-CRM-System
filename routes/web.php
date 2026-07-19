@@ -19,12 +19,13 @@ Route::get('/dashboard', function () {
         'products' => \App\Models\Product::with('branches')->get(),
         'employees' => \App\Models\Employee::all(),
         'customers' => \App\Models\Customer::with(['assignedEmployee', 'sales.items.product'])->get(),
-        'sales' => \App\Models\Sale::with('customer', 'items.product')->latest()->take(50)->get(),
+        'sales' => \App\Models\Sale::with(['customer', 'items.product', 'branch'])->latest()->take(50)->get(),
         'branches' => \App\Models\Branch::all(),
     ]);
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::post('/sales', [\App\Http\Controllers\SaleController::class, 'store'])->middleware(['auth', 'verified'])->name('sales.store');
+Route::get('/sales/{sale}/invoice', [\App\Http\Controllers\SaleController::class, 'invoice'])->middleware(['auth', 'verified'])->name('sales.invoice');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/products', [\App\Http\Controllers\ProductController::class, 'store'])->name('products.store');

@@ -682,6 +682,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             <SortableHeader field="invoice_number" label="Invoice" />
                                             <SortableHeader field="created_at" label="Date" />
                                             <SortableHeader field="customer.first_name" label="Customer" />
+                                            <SortableHeader field="branch.name" label="Branch" />
                                             <SortableHeader field="total_amount" label="Total" />
                                             <SortableHeader field="status" label="Status" />
                                             <th className="py-3 px-4 text-left font-semibold text-gray-500">Action</th>
@@ -693,6 +694,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <td className="text-gray-500 font-mono text-sm">INV-{new Date(s.created_at).toISOString().split('T')[0].replace(/-/g, '')}-{s.id.toString().padStart(3, '0')}</td>
                                                 <td>{new Date(s.created_at).toISOString().split('T')[0]}</td>
                                                 <td className="font-medium">{s.customer.first_name} {s.customer.last_name}</td>
+                                                <td>{s.branch?.name || 'N/A'}</td>
                                                 <td className="font-medium">${parseFloat(s.total_amount).toFixed(2)}</td>
                                                 <td><span className="nexus-badge solid-dark">paid</span></td>
                                                 <td>
