@@ -214,12 +214,14 @@ export default function Dashboard({ products, employees, customers, sales, branc
     };
 
     const updateCartQty = (productId, qty) => {
-        const val = parseInt(qty);
-        if (isNaN(val) || val < 1) return;
         setCart(cart.map(i => {
             if (i.product_id === productId) {
+                if (qty === '') return { ...i, quantity: '' };
+                const val = parseInt(qty);
+                if (isNaN(val) || val < 1) return i;
+                
                 if (val > i.stock) {
-                    toast.error('Not enough stock');
+                    toast.error(`Only ${i.stock} items left in stock!`);
                     return { ...i, quantity: i.stock };
                 }
                 return { ...i, quantity: val };
@@ -235,6 +237,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const checkout = () => {
         if (!selectedCustomer) return toast.error('Select a customer');
         if (cart.length === 0) return toast.error('Cart is empty');
+        if (cart.some(i => !i.quantity || isNaN(i.quantity) || i.quantity < 1)) return toast.error('Please enter valid quantities for all items');
         
         const loadingToast = toast.loading('Processing sale...');
         router.post('/sales', {
