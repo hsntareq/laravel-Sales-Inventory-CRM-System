@@ -400,6 +400,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
 
     return (
         <NexusLayout activeTab={activeTab} onTabChange={setActiveTab}>
+            <Head title="Dashboard - SinodTech CRM" />
                 {/* Topbar */}
                 <header className="nexus-topbar relative">
                     <div className="nexus-search"></div>
@@ -443,7 +444,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </button>
                             </div>
 
-                            <div className="dashboard-stats-grid">
+                            <div className="metrics-grid">
                                 <div className="nexus-card cursor-pointer hover:border-slate-300 transition-colors" onClick={() => setActiveTab('sales')}>
                                     <div className="metric-card-header">
                                         <span>Revenue (All time)</span>
