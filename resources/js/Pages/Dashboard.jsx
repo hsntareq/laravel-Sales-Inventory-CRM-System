@@ -1001,7 +1001,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                         <div className="nexus-modal-body bg-slate-50 p-0 flex flex-1 overflow-hidden h-full">
                             <div className="w-2/3 p-6 border-r border-gray-200 overflow-y-auto flex flex-col">
                                 <div className="flex gap-4 mb-6 flex-shrink-0">
-                                    <div className="nexus-search flex-1">
+                                    <div className="nexus-search flex-1" style={{ height: '42px' }}>
                                         <Search size={18} />
                                         <input 
                                             type="text" 
@@ -1011,7 +1011,22 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                         />
                                     </div>
                                     <div className="w-64">
-                                        <Select menuPosition="fixed" menuPortalTarget={document.body} styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                                        <Select 
+                                            menuPosition="fixed" 
+                                            menuPortalTarget={document.body} 
+                                            styles={{
+                                                menuPortal: base => ({ ...base, zIndex: 9999 }),
+                                                control: (base, state) => ({
+                                                    ...base,
+                                                    minHeight: '42px',
+                                                    borderRadius: '8px',
+                                                    backgroundColor: '#f8fafc',
+                                                    borderColor: state.isFocused ? '#94a3b8' : '#e2e8f0',
+                                                    boxShadow: 'none',
+                                                    '&:hover': { borderColor: '#cbd5e1' }
+                                                }),
+                                                valueContainer: base => ({ ...base, padding: '0 12px' })
+                                            }}
                                             options={branches.map(b => ({ value: b.id, label: b.name }))}
                                             value={selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
                                             onChange={(opt) => {
