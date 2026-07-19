@@ -958,7 +958,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 <h1>Point of Sale</h1>
                                 <p>Search products, build the order, and check out.</p>
                             </div>
-                            <button className="nexus-icon-btn" onClick={() => setIsPosOpen(false)}>×</button>
+                            <button className="nexus-icon-btn" onClick={() => setIsPosOpen(false)}><X size={24} /></button>
                         </div>
                         <div className="nexus-modal-body bg-slate-50 p-0 flex flex-1 overflow-hidden h-full">
                             <div className="w-2/3 p-6 border-r border-gray-200 overflow-y-auto flex flex-col">
@@ -1123,7 +1123,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             <div className="nexus-page-title">
                                 <h1>New Product</h1>
                             </div>
-                            <button className="nexus-icon-btn" onClick={() => setIsNewProductOpen(false)}>×</button>
+                            <button className="nexus-icon-btn" onClick={() => setIsNewProductOpen(false)}><X size={24} /></button>
                         </div>
                         <form onSubmit={handleCreateProduct} className="nexus-modal-body">
                             <div className="nexus-form-group">
@@ -1161,7 +1161,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             <div className="nexus-page-title">
                                 <h1>New Customer</h1>
                             </div>
-                            <button className="nexus-icon-btn" onClick={() => setIsNewCustomerOpen(false)}>×</button>
+                            <button className="nexus-icon-btn" onClick={() => setIsNewCustomerOpen(false)}><X size={24} /></button>
                         </div>
                         <form onSubmit={handleCreateCustomer} className="nexus-modal-body">
                             <div className="flex gap-4">
@@ -1255,7 +1255,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 <h1>Compose Email</h1>
                                 <p>To: {emailTarget.first_name} {emailTarget.last_name} ({emailTarget.email})</p>
                             </div>
-                            <button className="nexus-icon-btn" onClick={() => setIsEmailOpen(false)}>×</button>
+                            <button className="nexus-icon-btn" onClick={() => setIsEmailOpen(false)}><X size={24} /></button>
                         </div>
                         <form onSubmit={handleSendEmail} className="nexus-modal-body">
                             <div className="nexus-form-group">
