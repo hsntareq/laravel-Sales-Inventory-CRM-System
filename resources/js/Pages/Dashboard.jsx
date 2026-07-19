@@ -783,7 +783,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     <span className="nexus-user-name text-lg">{c.first_name} {c.last_name}</span>
                                                     <span className="nexus-user-email">{c.email}</span>
                                                 </div>
-                                                <span className="nexus-badge solid-red">inactive</span>
+                                                {c.assigned_employee_id 
+                                                    ? <span className="nexus-badge solid-green text-[10px] tracking-wider font-bold px-2 py-1">ASSIGNED</span> 
+                                                    : <span className="nexus-badge solid-gray text-[10px] tracking-wider font-bold px-2 py-1">UNASSIGNED</span>}
                                             </div>
                                             <div className="mt-4 mb-2 text-sm text-gray-500 font-medium">Assign Employee</div>
                                             <div className="mb-4">
