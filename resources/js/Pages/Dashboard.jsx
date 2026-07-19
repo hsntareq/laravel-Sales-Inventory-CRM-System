@@ -441,7 +441,11 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const sortedLostCustomers = sortData(filteredLostCustomers);
     const paginatedLostCustomers = sortedLostCustomers.slice((pageLostCustomers - 1) * itemsPerPage, pageLostCustomers * itemsPerPage);
 
-    const filteredSales = sales.filter(s => s.customer.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || s.customer.last_name.toLowerCase().includes(globalSearch.toLowerCase()));
+    const filteredSales = sales.filter(s => {
+        const matchesSearch = s.customer.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || s.customer.last_name.toLowerCase().includes(globalSearch.toLowerCase());
+        const matchesBranch = selectedBranch === 'all' || s.branch_id === selectedBranch;
+        return matchesSearch && matchesBranch;
+    });
     const [pageSales, setPageSales] = useState(1);
     const paginatedSales = sortData(filteredSales).slice((pageSales - 1) * itemsPerPage, pageSales * itemsPerPage);
 
@@ -733,6 +737,25 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <p>Every transaction deducts stock automatically. Invoices emailed on payment.</p>
                                 </div>
                                 <div className="flex gap-3 items-center">
+                                    <div className="w-48">
+                                        <Select
+                                            styles={{
+                                                control: (base, state) => ({
+                                                    ...base,
+                                                    minHeight: '38px',
+                                                    height: '38px',
+                                                    borderRadius: '8px',
+                                                    borderColor: state.isFocused ? '#94a3b8' : '#e2e8f0',
+                                                    boxShadow: 'none',
+                                                    '&:hover': { borderColor: '#cbd5e1' }
+                                                })
+                                            }}
+                                            options={[{ value: 'all', label: 'All Branches' }, ...branches.map(b => ({ value: b.id, label: b.name }))]}
+                                            value={selectedBranch === 'all' ? { value: 'all', label: 'All Branches' } : selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
+                                            onChange={(opt) => setSelectedBranch(opt.value)}
+                                            placeholder="Filter by branch..."
+                                        />
+                                    </div>
                                     <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search sales..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
                                     <button className="nexus-btn primary" onClick={() => setIsPosOpen(true)}>
                                         <Plus size={18} /> New sale
