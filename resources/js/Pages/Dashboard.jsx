@@ -1098,7 +1098,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                         />
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start">
+                                <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 flex-1 overflow-y-auto content-start">
                                     {filteredProducts.map(p => (
                                         <div key={p.id} className="nexus-card cursor-pointer hover:border-slate-400" onClick={() => addToCart(p)}>
                                             <div className="font-medium">{p.name}</div>
