@@ -91,9 +91,21 @@ export default function Dashboard({ products, employees, customers, sales, branc
         return branch ? branch.pivot.stock_quantity : 0;
     };
     const [isPosOpen, setIsPosOpen] = useState(false);
-    const [cart, setCart] = useState([]);
-    const [savedCarts, setSavedCarts] = useState({});
-    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [cart, setCart] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('pos_cart')) || []; } catch(e) { return []; }
+    });
+    const [savedCarts, setSavedCarts] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('pos_savedCarts')) || {}; } catch(e) { return {}; }
+    });
+    const [selectedCustomer, setSelectedCustomer] = useState(() => {
+        try { return JSON.parse(localStorage.getItem('pos_selectedCustomer')) || null; } catch(e) { return null; }
+    });
+
+    useEffect(() => {
+        localStorage.setItem('pos_cart', JSON.stringify(cart));
+        localStorage.setItem('pos_savedCarts', JSON.stringify(savedCarts));
+        localStorage.setItem('pos_selectedCustomer', JSON.stringify(selectedCustomer));
+    }, [cart, savedCarts, selectedCustomer]);
     
     const formatNumber = (num) => {
         const val = typeof num === 'string' ? parseFloat(num) : num;
@@ -1176,6 +1188,17 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                         </div>
                                                     );
                                                 })}
+                                                <button 
+                                                    className="inline-flex items-center text-xs text-red-500 hover:text-red-700 font-medium px-2 py-1.5 rounded-full hover:bg-red-50 transition-colors"
+                                                    onClick={() => {
+                                                        if (confirm('Clear all drafts?')) {
+                                                            setSavedCarts({});
+                                                        }
+                                                    }}
+                                                    title="Clear all drafts"
+                                                >
+                                                    <X size={14} className="mr-1" /> All
+                                                </button>
                                             </div>
                                         );
                                     })()}
