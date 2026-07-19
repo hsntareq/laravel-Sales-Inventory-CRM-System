@@ -578,6 +578,28 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </div>
                                 <div className="flex gap-3 items-center">
                                     <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search products..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
+                                    <div className="w-56 h-[38px]">
+                                        <Select 
+                                            menuPosition="fixed" 
+                                            menuPortalTarget={document.body} 
+                                            styles={{
+                                                menuPortal: base => ({ ...base, zIndex: 9999 }),
+                                                control: (base, state) => ({
+                                                    ...base,
+                                                    minHeight: '38px',
+                                                    height: '38px',
+                                                    borderRadius: '8px',
+                                                    borderColor: state.isFocused ? '#94a3b8' : '#e2e8f0',
+                                                    boxShadow: 'none',
+                                                    '&:hover': { borderColor: '#cbd5e1' }
+                                                })
+                                            }}
+                                            options={branches.map(b => ({ value: b.id, label: b.name }))}
+                                            value={selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
+                                            onChange={(opt) => setSelectedBranch(opt.value)}
+                                            placeholder="Filter by branch..."
+                                        />
+                                    </div>
                                     <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
                                         <button className={`p-2 ${productView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setProductView('list')}><List size={18}/></button>
                                         <button className={`p-2 ${productView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setProductView('grid')}><Grid size={18}/></button>
