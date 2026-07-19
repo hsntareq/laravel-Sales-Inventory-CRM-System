@@ -415,15 +415,15 @@ export default function Dashboard({ products, employees, customers, sales, branc
         <NexusLayout activeTab={activeTab} onTabChange={setActiveTab}>
             <Head title="Dashboard - SinodTech CRM" />
                 {/* Topbar */}
-                <header className="nexus-topbar relative">
-                    <div className="nexus-search"></div>
+                <header className="nexus-topbar relative justify-end">
                     <div className="nexus-top-actions flex items-center gap-4">
                         <button 
-                            className="nexus-btn"
+                            className="nexus-btn !text-indigo-600 !border-indigo-200 hover:!bg-indigo-50 transition-colors"
+                            style={{ height: '40px' }}
                             onClick={() => setIsPosOpen(true)}
                         >
                             <ShoppingCart size={18} />
-                            <span>Open POS</span>
+                            <span className="font-bold">Open POS</span>
                         </button>
                         <button className="nexus-icon-btn relative" onClick={() => setIsNotifOpen(!isNotifOpen)}>
                             <Bell size={20} />
