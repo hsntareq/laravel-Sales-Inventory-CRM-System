@@ -68,8 +68,9 @@ export default function NexusLayout({ children, activeTab = null, onTabChange = 
                     <a href="/dashboard?tab=customers" onClick={(e) => handleTabClick(e, 'customers')} className={`nexus-nav-item ${getIsActive('customers') ? 'active' : ''}`}>
                         <Users size={20} /> Customers
                     </a>
-                    <a href="/dashboard?tab=lost" onClick={(e) => handleTabClick(e, 'lost')} className={`nexus-nav-item ${getIsActive('lost') ? 'active' : ''}`}>
-                        <UserX size={20} /> Lost Customers
+                    <a href="/dashboard?tab=lost-customers" onClick={(e) => handleTabClick(e, 'lost-customers')} className={`nexus-nav-item ${getIsActive('lost-customers') ? 'active' : ''}`}>
+                        <UserX size={18} />
+                        <span>Lost Customers</span>
                     </a>
                     <a href="/dashboard?tab=employees" onClick={(e) => handleTabClick(e, 'employees')} className={`nexus-nav-item ${getIsActive('employees') ? 'active' : ''}`}>
                         <UsersRound size={20} /> Employees

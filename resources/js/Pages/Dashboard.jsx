@@ -508,7 +508,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <div className="stat-value">{products.filter(p => getBranchStock(p, selectedBranch) < 10).length}</div>
                                     <div className="text-sm text-red-600 font-medium">↗ attention</div>
                                 </div>
-                                <div className="nexus-card cursor-pointer hover:border-slate-300 transition-colors" onClick={() => setActiveTab('lost')}>
+                                <div className="nexus-card cursor-pointer hover:border-slate-300 transition-colors" onClick={() => setActiveTab('lost-customers')}>
                                     <div className="metric-card-header">
                                         <span>Lost Customers</span>
                                         <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#fee2e2', color: '#dc2626'}}><UserX size={16}/></span>
