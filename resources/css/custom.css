@@ -217,7 +217,12 @@ body {
     transition: all 0.2s;
 }
 
-.nexus-icon-btn:hover {
+.nexus-icon-btn:disabled, .nexus-icon-btn[disabled] {
+    cursor: not-allowed !important;
+    opacity: 0.5;
+}
+
+.nexus-icon-btn:hover:not(:disabled) {
     background: var(--border-light);
     color: var(--text-primary);
 }
@@ -263,13 +268,18 @@ body {
     color: var(--text-primary);
 }
 
+.nexus-btn:disabled, .nexus-btn[disabled] {
+    cursor: not-allowed !important;
+    opacity: 0.5;
+}
+
 .nexus-btn.primary {
     background: var(--accent);
     color: white;
     border-color: var(--accent);
 }
 
-.nexus-btn.primary:hover {
+.nexus-btn.primary:hover:not(:disabled) {
     background: var(--accent-hover);
 }
 
