@@ -5,7 +5,7 @@ import Select from 'react-select';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, Package, ShoppingCart, Users, UserX, UsersRound, MapPin, 
-    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X, Edit, MoreVertical, Eye
+    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X, Edit, MoreVertical, Eye, History
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
