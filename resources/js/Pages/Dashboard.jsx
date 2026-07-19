@@ -1100,10 +1100,10 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                         <span>${cartTotal.toFixed(2)}</span>
                                     </div>
                                     <button 
-                                        className="nexus-btn primary w-full justify-center py-3 text-base"
+                                        className="nexus-btn primary w-full justify-center py-4 text-lg font-bold shadow-md hover:shadow-lg transition-all"
                                         onClick={checkout}
                                     >
-                                        Complete sale
+                                        Complete Order
                                     </button>
                                 </div>
                             </div>
