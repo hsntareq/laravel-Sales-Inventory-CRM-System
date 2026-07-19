@@ -43,6 +43,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
             if (sortField === 'customer.first_name') {
                 valA = (a.customer?.first_name + ' ' + a.customer?.last_name).toLowerCase();
                 valB = (b.customer?.first_name + ' ' + b.customer?.last_name).toLowerCase();
+            } else if (sortField === 'stock') {
+                valA = getBranchStock(a, selectedBranch);
+                valB = getBranchStock(b, selectedBranch);
             } else if (sortField === 'first_name') {
                 valA = (a.first_name + ' ' + a.last_name).toLowerCase();
                 valB = (b.first_name + ' ' + b.last_name).toLowerCase();
@@ -557,7 +560,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <SortableHeader field="name" label="Product" />
                                                 <SortableHeader field="sku" label="SKU" />
                                                 <SortableHeader field="price" label="Price" />
-                                                <th>Stock</th>
+                                                <SortableHeader field="stock" label="Stock" />
                                             </tr>
                                         </thead>
                                         <tbody>
