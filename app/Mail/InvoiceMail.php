@@ -32,7 +32,10 @@ class InvoiceMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            htmlString: "<h1>Thank you for your purchase!</h1><p>Your total is: $" . number_format($this->sale->total_amount, 2) . "</p><p>Please find your invoice attached.</p>"
+            view: 'emails.invoice',
+            with: [
+                'sale' => $this->sale,
+            ],
         );
     }
 
