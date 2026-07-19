@@ -282,6 +282,10 @@ export default function Dashboard({ products, employees, customers, sales, branc
             onSuccess: () => {
                 setIsNewCustomerOpen(false);
                 setNewCustomer({ first_name: '', last_name: '', email: '' });
+                toast.success('Customer created successfully!');
+            },
+            onError: (errors) => {
+                Object.values(errors).forEach(err => toast.error(err));
             }
         });
     };
