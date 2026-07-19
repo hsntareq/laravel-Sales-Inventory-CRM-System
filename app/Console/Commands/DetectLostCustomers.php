@@ -46,8 +46,16 @@ class DetectLostCustomers extends Command
             $customer->update(['assigned_employee_id' => $employee->id]);
             
             // Simulate sending a re-engagement email
-            Mail::to($customer->email)->send(new ReengagementMail($customer, $employee));
+            try {
+                Mail::to($customer->email)->send(new ReengagementMail($customer, $employee));
+            } catch (\Exception $e) {
+                // Mailtrap free tier rate limit is ~2 emails/sec. Throttle if we hit it.
+                sleep(2);
+                Mail::to($customer->email)->send(new ReengagementMail($customer, $employee));
+            }
             
+            // Throttle to avoid hitting Mailtrap limits
+            usleep(600000);
             $count++;
         }
 
