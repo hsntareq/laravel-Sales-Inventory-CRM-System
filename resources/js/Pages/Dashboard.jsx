@@ -173,7 +173,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
 
     // Forms state
     const [newProduct, setNewProduct] = useState({ name: '', sku: '', price: '', stock_quantity: '' });
-    const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', email: '' });
+    const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', email: '', phone: '' });
     const [emailForm, setEmailForm] = useState({ subject: '', message: '' });
 
     const generateSKU = () => {
@@ -283,7 +283,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
             preserveScroll: true,
             onSuccess: () => {
                 setIsNewCustomerOpen(false);
-                setNewCustomer({ first_name: '', last_name: '', email: '' });
+                setNewCustomer({ first_name: '', last_name: '', email: '', phone: '' });
                 toast.success('Customer created successfully!');
             },
             onError: (errors) => {
@@ -1186,6 +1186,10 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             <div className="nexus-form-group">
                                 <label>Email Address</label>
                                 <input type="email" className="nexus-input" value={newCustomer.email} onChange={e => setNewCustomer({...newCustomer, email: e.target.value})} required/>
+                            </div>
+                            <div className="nexus-form-group">
+                                <label>Phone Number</label>
+                                <input type="tel" className="nexus-input" value={newCustomer.phone} onChange={e => setNewCustomer({...newCustomer, phone: e.target.value})} />
                             </div>
                             <div className="mt-4 flex justify-end gap-3">
                                 <button type="button" className="nexus-btn" onClick={() => setIsNewCustomerOpen(false)}>Cancel</button>

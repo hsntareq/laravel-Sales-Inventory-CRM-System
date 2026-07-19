@@ -14,6 +14,7 @@ class CustomerController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'email' => 'required|email|unique:customers,email',
+            'phone' => 'nullable|string|max:20',
             'assigned_employee_id' => 'nullable|exists:employees,id',
         ]);
 
