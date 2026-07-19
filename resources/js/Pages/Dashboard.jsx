@@ -844,7 +844,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                         </>
                     )}
 
-                    {activeTab === 'lost' && (
+                    {activeTab === 'lost-customers' && (
                         <>
                             <div className="nexus-page-header">
                                 <div className="nexus-page-title">
