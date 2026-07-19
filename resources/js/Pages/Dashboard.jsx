@@ -861,7 +861,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <span className="text-sm text-gray-500">Threshold:</span>
-                                        <select className="nexus-input py-1 pl-2 pr-8" value={inactivityThreshold} onChange={e => setInactivityThreshold(parseInt(e.target.value))}>
+                                        <select className="nexus-input py-1.5 pl-3 pr-10 min-w-[120px]" value={inactivityThreshold} onChange={e => setInactivityThreshold(parseInt(e.target.value))}>
                                             <option value="30">30 days</option>
                                             <option value="60">60 days</option>
                                             <option value="90">90 days</option>
