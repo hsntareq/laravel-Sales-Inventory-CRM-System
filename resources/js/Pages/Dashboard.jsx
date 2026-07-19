@@ -1014,7 +1014,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <div className="flex items-center gap-2 mt-2">
                                                     <input 
                                                         type="number" 
-                                                        className="nexus-input py-1 px-2 w-20 text-center"
+                                                        className="nexus-input !py-1 !px-2 !w-16 !text-center !text-sm"
                                                         value={item.quantity}
                                                         onChange={(e) => updateCartQty(item.product_id, e.target.value)}
                                                         min="1"
