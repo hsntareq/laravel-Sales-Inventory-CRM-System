@@ -438,9 +438,20 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const filteredBranches = branches.filter(b => b.name.toLowerCase().includes(globalSearch.toLowerCase()) || (b.location || '').toLowerCase().includes(globalSearch.toLowerCase()));
     const paginatedBranches = sortData(filteredBranches).slice((pageBranches - 1) * itemsPerPage, pageBranches * itemsPerPage);
 
+    const tabTitles = {
+        'dashboard': 'Dashboard',
+        'products': 'Products',
+        'sales': 'Sales',
+        'customers': 'Customers',
+        'lost-customers': 'Lost Customers',
+        'employees': 'Employees',
+        'branches': 'Branches'
+    };
+    const currentTitle = tabTitles[activeTab] || 'Dashboard';
+
     return (
         <NexusLayout activeTab={activeTab} onTabChange={setActiveTab}>
-            <Head title="Dashboard - SinodTech CRM" />
+            <Head title={`${currentTitle} - SinodTech CRM`} />
                 {/* Topbar */}
                 <header className="nexus-topbar relative shrink-0">
                     <div className="nexus-top-actions ml-auto flex items-center gap-4">
