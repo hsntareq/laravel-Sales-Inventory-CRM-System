@@ -95,6 +95,15 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const [savedCarts, setSavedCarts] = useState({});
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     
+    const formatNumber = (num) => {
+        const val = typeof num === 'string' ? parseFloat(num) : num;
+        if (isNaN(val)) return '0.00';
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(val);
+    };
+
     // Search and Pagination
     const [globalSearch, setGlobalSearch] = useState('');
     const [assignmentFilter, setAssignmentFilter] = useState('all');
@@ -454,7 +463,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                         <span>Revenue (All time)</span>
                                         <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#f1f5f9'}}>$</span>
                                     </div>
-                                    <div className="stat-value">${sales.reduce((sum, s) => sum + parseFloat(s.total_amount), 0).toFixed(2)}</div>
+                                    <div className="stat-value">${formatNumber(sales.reduce((sum, s) => sum + parseFloat(s.total_amount), 0))}</div>
                                     <div className="text-sm text-green-600 font-medium">↗ Up to date</div>
                                 </div>
                                 <div className="nexus-card cursor-pointer hover:border-slate-300 transition-colors" onClick={() => setActiveTab('sales')}>
@@ -542,7 +551,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     <div className="text-xs text-slate-500 mt-1">{s.items?.[0]?.product?.name || 'Multiple items'}</div>
                                                 </div>
                                                 <div className="flex items-center gap-4">
-                                                    <div className="font-medium text-sm text-slate-800">${parseFloat(s.total_amount).toFixed(2)}</div>
+                                                    <div className="font-medium text-sm text-slate-800">${formatNumber(s.total_amount)}</div>
                                                     <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-900 text-white">paid</span>
                                                 </div>
                                             </div>
@@ -631,7 +640,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <tr key={p.id}>
                                                     <td className="font-medium">{p.name}</td>
                                                     <td className="text-gray-500 font-mono text-sm">{p.sku}</td>
-                                                    <td className="font-medium">${parseFloat(p.price).toFixed(2)}</td>
+                                                    <td className="font-medium">${formatNumber(p.price)}</td>
                                                     <td>
                                                         {getBranchStock(p, selectedBranch) <= 0 ? <span className="nexus-badge solid-red">Out of stock</span> : 
                                                          getBranchStock(p, selectedBranch) < 10 ? <span className="nexus-badge soft-gray">Low ({getBranchStock(p, selectedBranch)})</span> : 
@@ -654,7 +663,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <div className="font-medium mb-3">{p.name}</div>
                                             </div>
                                             <div className="flex justify-between items-center">
-                                                <div className="font-bold text-lg">${parseFloat(p.price).toFixed(2)}</div>
+                                                <div className="font-bold text-lg">${formatNumber(p.price)}</div>
                                                 {getBranchStock(p, selectedBranch) <= 0 ? <span className="nexus-badge outline-red">Out</span> : <span className="text-sm text-gray-500">{getBranchStock(p, selectedBranch)} left</span>}
                                             </div>
                                         </div>
@@ -700,7 +709,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <td>{new Date(s.created_at).toISOString().split('T')[0]}</td>
                                                 <td className="font-medium">{s.customer.first_name} {s.customer.last_name}</td>
                                                 <td>{s.branch?.name || 'N/A'}</td>
-                                                <td className="font-medium">${parseFloat(s.total_amount).toFixed(2)}</td>
+                                                <td className="font-medium">${formatNumber(s.total_amount)}</td>
                                                 <td><span className="nexus-badge solid-dark">paid</span></td>
                                                 <td>
                                                     <a href={`/sales/${s.id}/invoice`} target="_blank" className="text-blue-500 hover:underline flex items-center gap-1"><Download size={14} /> Invoice</a>
@@ -1083,7 +1092,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             <div className="font-medium">{p.name}</div>
                                             <div className="text-xs text-gray-400 font-mono mb-4">{p.sku}</div>
                                             <div className="flex justify-between items-center">
-                                                <div className="font-bold text-lg">${parseFloat(p.price).toFixed(2)}</div>
+                                                <div className="font-bold text-lg">${formatNumber(p.price)}</div>
                                                 {getBranchStock(p, selectedBranch) <= 0 ? (
                                                     <span className="nexus-badge soft-red">Out</span>
                                                 ) : (
@@ -1186,11 +1195,11 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                         min="1"
                                                         max={item.stock}
                                                     />
-                                                    <span className="text-sm text-gray-500">@ ${parseFloat(item.price).toFixed(2)}</span>
+                                                    <span className="text-sm text-gray-500">@ ${formatNumber(item.price)}</span>
                                                 </div>
                                             </div>
                                             <div className="flex flex-col items-end gap-2">
-                                                <div className="font-semibold">${(item.quantity * item.price).toFixed(2)}</div>
+                                                <div className="font-semibold">${formatNumber(item.quantity * item.price)}</div>
                                                 <button className="text-red-500 hover:text-red-700 p-1" onClick={() => removeFromCart(item.product_id)}>
                                                     <Trash2 size={16}/>
                                                 </button>
@@ -1207,11 +1216,11 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 <div className="mt-auto pt-4 border-t border-gray-200 flex-shrink-0">
                                     <div className="flex justify-between text-sm text-gray-500 mb-2">
                                         <span>Subtotal</span>
-                                        <span>${cartTotal.toFixed(2)}</span>
+                                        <span>${formatNumber(cartTotal)}</span>
                                     </div>
                                     <div className="flex justify-between text-lg font-bold mb-4">
                                         <span>Total</span>
-                                        <span>${cartTotal.toFixed(2)}</span>
+                                        <span>${formatNumber(cartTotal)}</span>
                                     </div>
                                     <button 
                                         className="nexus-btn primary w-full justify-center py-5 text-xl font-bold shadow-md hover:shadow-lg transition-all"
@@ -1358,7 +1367,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </div>
                                 <div className="p-4 bg-slate-50 rounded-lg">
                                     <div className="text-sm text-gray-500">Total Lifetime Value</div>
-                                    <div className="text-2xl font-bold">${historyTarget.sales?.reduce((sum, s) => sum + parseFloat(s.total_amount), 0).toFixed(2) || '0.00'}</div>
+                                    <div className="text-2xl font-bold">${formatNumber(historyTarget.sales?.reduce((sum, s) => sum + parseFloat(s.total_amount), 0))}</div>
                                 </div>
                             </div>
                             <h4 className="font-bold mb-3">Recent Purchases</h4>
@@ -1384,7 +1393,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                         ))}
                                                     </ul>
                                                 </td>
-                                                <td className="font-bold">${parseFloat(sale.total_amount).toFixed(2)}</td>
+                                                <td className="font-bold">${formatNumber(sale.total_amount)}</td>
                                             </tr>
                                         ))}
                                     </tbody>
