@@ -21,6 +21,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
         setActiveTabRaw(tab);
         setSortField(null);
         setSortOrder('asc');
+        setGlobalSearch('');
     };
 
     useEffect(() => {
