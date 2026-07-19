@@ -85,6 +85,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
     };
     const [isPosOpen, setIsPosOpen] = useState(false);
     const [cart, setCart] = useState([]);
+    const [savedCarts, setSavedCarts] = useState({});
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     
     // Search and Pagination
@@ -240,8 +241,14 @@ export default function Dashboard({ products, employees, customers, sales, branc
             items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity }))
         }, {
             onSuccess: () => {
-                setCart([]);
+                setSavedCarts(prev => {
+                    const newSaved = { ...prev };
+                    if (selectedCustomer) delete newSaved[selectedCustomer.value];
+                    setCart(newSaved['walk-in'] || []);
+                    return newSaved;
+                });
                 setIsPosOpen(false);
+                setSelectedCustomer(null);
                 toast.dismiss(loadingToast);
             },
             onError: () => toast.dismiss(loadingToast)
@@ -983,8 +990,16 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                         options={customerOptions}
                                         value={selectedCustomer}
                                         onChange={(opt) => {
+                                            const prevKey = selectedCustomer ? selectedCustomer.value : 'walk-in';
+                                            const nextKey = opt ? opt.value : 'walk-in';
+                                            
+                                            setSavedCarts(prev => {
+                                                const newSaved = { ...prev, [prevKey]: cart };
+                                                setCart(newSaved[nextKey] || []);
+                                                return newSaved;
+                                            });
+                                            
                                             setSelectedCustomer(opt);
-                                            setCart([]);
                                         }}
                                         placeholder="Search customer..."
                                         isClearable
