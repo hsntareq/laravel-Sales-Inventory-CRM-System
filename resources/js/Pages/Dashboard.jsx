@@ -730,7 +730,11 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <div className="flex gap-2">
                                                     <button className="nexus-btn w-full justify-center" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><ShoppingCart size={16}/> History</button>
                                                     <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
-                                                    <a href="tel:+15550000" className="nexus-btn w-full justify-center"><Phone size={16}/> Call</a>
+                                                    {c.phone ? (
+                                                        <a href={`tel:${c.phone}`} className="nexus-btn w-full justify-center"><Phone size={16}/> Call</a>
+                                                    ) : (
+                                                        <button disabled className="nexus-btn w-full justify-center opacity-50 cursor-not-allowed" title="No phone number"><Phone size={16}/> Call</button>
+                                                    )}
                                                 </div>
                                             </div>
                                         );
