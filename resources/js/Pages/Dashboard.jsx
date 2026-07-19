@@ -848,13 +848,13 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { setEditCustomer(c); setIsEditCustomerOpen(true); }}><Edit size={16}/> Edit</button>
-                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><History size={16}/> History</button>
-                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
+                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1 !px-2 !py-1.5 !text-xs" onClick={() => { setEditCustomer(c); setIsEditCustomerOpen(true); }}><Edit size={14}/> Edit</button>
+                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1 !px-2 !py-1.5 !text-xs" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><History size={14}/> History</button>
+                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1 !px-2 !py-1.5 !text-xs" onClick={() => { openEmailModal(c); }}><Mail size={14}/> Email</button>
                                                     {c.phone ? (
-                                                        <a href={`tel:${c.phone}`} className="nexus-btn w-full justify-center"><Phone size={16}/> Call</a>
+                                                        <a href={`tel:${c.phone}`} className="nexus-btn w-full justify-center flex items-center gap-1 !px-2 !py-1.5 !text-xs"><Phone size={14}/> Call</a>
                                                     ) : (
-                                                        <button disabled className="nexus-btn w-full justify-center opacity-50 cursor-not-allowed" title="No phone number"><Phone size={16}/> Call</button>
+                                                        <button disabled className="nexus-btn w-full justify-center flex items-center gap-1 !px-2 !py-1.5 !text-xs opacity-50 cursor-not-allowed" title="No phone number"><Phone size={14}/> Call</button>
                                                     )}
                                                 </div>
                                             </div>
