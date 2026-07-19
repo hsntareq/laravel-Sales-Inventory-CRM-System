@@ -879,6 +879,14 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             <option value="120">120 days</option>
                                         </select>
                                     </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-500">Status:</span>
+                                        <select className="nexus-input py-1.5 pl-3 pr-10 min-w-[120px]" value={assignmentFilter} onChange={e => setAssignmentFilter(e.target.value)}>
+                                            <option value="all">All</option>
+                                            <option value="assigned">Assigned</option>
+                                            <option value="unassigned">Unassigned</option>
+                                        </select>
+                                    </div>
                                 </div>
                             </div>
 
@@ -899,13 +907,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                         {sortField === 'last_purchase_date' && <span className="text-gray-400">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
                                                     </div>
                                                 </th>
-                                                <th>
-                                                    <select className="bg-transparent border-0 font-semibold text-gray-500 uppercase text-xs tracking-wider outline-none p-0 cursor-pointer" value={assignmentFilter} onChange={e => setAssignmentFilter(e.target.value)}>
-                                                        <option value="all">Status (All)</option>
-                                                        <option value="assigned">Assigned</option>
-                                                        <option value="unassigned">Unassigned</option>
-                                                    </select>
-                                                </th>
+                                                <th>Status</th>
                                                 <th>Assigned To</th>
                                                 <th>Action</th>
                                             </tr>
