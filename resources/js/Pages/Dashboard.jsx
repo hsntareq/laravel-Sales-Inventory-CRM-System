@@ -415,7 +415,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
         <NexusLayout activeTab={activeTab} onTabChange={setActiveTab}>
             <Head title="Dashboard - SinodTech CRM" />
                 {/* Topbar */}
-                <header className="nexus-topbar relative">
+                <header className="nexus-topbar relative shrink-0">
                     <div className="nexus-top-actions ml-auto flex items-center gap-4">
                         <button 
                             className="nexus-btn !text-indigo-600 !border-indigo-200 hover:!bg-indigo-50 transition-colors"
