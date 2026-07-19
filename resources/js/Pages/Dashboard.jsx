@@ -201,6 +201,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
 
     // POS Logic
     const addToCart = (product) => {
+        if (!selectedCustomer) return toast.error('Please select a customer first');
+        
         const existing = cart.find(i => i.product_id === product.id);
         if (existing) {
             if (existing.quantity >= getBranchStock(product, selectedBranch)) return toast.error('Not enough stock');
