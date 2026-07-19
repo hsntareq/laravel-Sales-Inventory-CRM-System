@@ -651,6 +651,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             <SortableHeader field="customer.first_name" label="Customer" />
                                             <SortableHeader field="total_amount" label="Total" />
                                             <SortableHeader field="status" label="Status" />
+                                            <th className="py-3 px-4 text-left font-semibold text-gray-500">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -661,6 +662,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <td className="font-medium">{s.customer.first_name} {s.customer.last_name}</td>
                                                 <td className="font-medium">${parseFloat(s.total_amount).toFixed(2)}</td>
                                                 <td><span className="nexus-badge solid-dark">paid</span></td>
+                                                <td>
+                                                    <a href={`/sales/${s.id}/invoice`} target="_blank" className="text-blue-500 hover:underline flex items-center gap-1"><Download size={14} /> Invoice</a>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
