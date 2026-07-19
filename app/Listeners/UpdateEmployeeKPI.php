@@ -3,11 +3,10 @@
 namespace App\Listeners;
 
 use App\Events\SaleCompleted;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 use Carbon\Carbon;
 
-class UpdateEmployeeKPI implements ShouldQueue
+class UpdateEmployeeKPI
 {
     public function handle(SaleCompleted $event): void
     {

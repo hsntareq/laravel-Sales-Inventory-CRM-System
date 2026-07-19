@@ -97,6 +97,19 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const [savedCarts, setSavedCarts] = useState(() => {
         try { return JSON.parse(localStorage.getItem('pos_savedCarts')) || {}; } catch(e) { return {}; }
     });
+
+    useEffect(() => {
+        const handleStorageChange = (e) => {
+            if (e.key === 'pos_cart') {
+                try { setCart(JSON.parse(e.newValue) || []); } catch(err) {}
+            }
+            if (e.key === 'pos_savedCarts') {
+                try { setSavedCarts(JSON.parse(e.newValue) || {}); } catch(err) {}
+            }
+        };
+        window.addEventListener('storage', handleStorageChange);
+        return () => window.removeEventListener('storage', handleStorageChange);
+    }, []);
     const [viewingInvoiceSale, setViewingInvoiceSale] = useState(null);
     const [viewingBranch, setViewingBranch] = useState(null);
 
