@@ -784,7 +784,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                             : <span className="nexus-badge solid-gray text-[10px] tracking-wider font-bold px-2 py-1">UNASSIGNED</span>}
                                                     </td>
                                                     <td style={{minWidth: '250px'}}>
-                                                        <Select menuPosition="fixed" menuPortalTarget={document.body} 
+                                                        <Select menuPosition="fixed" menuPortalTarget={document.body} styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }} 
                                                             options={employeeOptions}
                                                             value={employeeOptions.find(opt => opt.value === c.assigned_employee_id)}
                                                             onChange={(selected) => handleAssignEmployee(c.id, selected.value)}
@@ -815,7 +815,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             </div>
                                             <div className="mt-4 mb-2 text-sm text-gray-500 font-medium">Assign Employee</div>
                                             <div className="mb-4">
-                                                <Select menuPosition="fixed" menuPortalTarget={document.body} 
+                                                <Select menuPosition="fixed" menuPortalTarget={document.body} styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }} 
                                                     options={employeeOptions}
                                                     value={employeeOptions.find(opt => opt.value === c.assigned_employee_id)}
                                                     onChange={(selected) => handleAssignEmployee(c.id, selected.value)}
@@ -940,7 +940,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
             {/* POS Modal */}
             {isPosOpen && (
                 <div className="nexus-modal-overlay">
-                    <div className="nexus-modal min-w-[900px]">
+                    <div className="nexus-modal !max-w-none !max-h-none !w-screen !h-screen !rounded-none !border-0 !m-0 min-w-full">
                         <div className="nexus-modal-header">
                             <div className="nexus-page-title">
                                 <h1>Point of Sale</h1>
@@ -948,7 +948,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             </div>
                             <button className="nexus-icon-btn" onClick={() => setIsPosOpen(false)}>×</button>
                         </div>
-                        <div className="nexus-modal-body bg-slate-50 p-0 flex h-[600px]">
+                        <div className="nexus-modal-body bg-slate-50 p-0 flex flex-1 overflow-hidden h-full">
                             <div className="w-2/3 p-6 border-r border-gray-200 overflow-y-auto flex flex-col">
                                 <div className="nexus-search w-full mb-6 flex-shrink-0">
                                     <Search size={18} />
@@ -979,7 +979,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             <div className="w-1/3 p-6 flex flex-col bg-white">
                                 <div className="nexus-form-group flex-shrink-0">
                                     <label>Customer</label>
-                                    <Select menuPosition="fixed" menuPortalTarget={document.body} 
+                                    <Select menuPosition="fixed" menuPortalTarget={document.body} styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }} 
                                         options={customerOptions}
                                         value={selectedCustomer}
                                         onChange={(opt) => {
