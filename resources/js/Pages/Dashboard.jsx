@@ -989,8 +989,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
 
             {/* POS Modal */}
             {isPosOpen && (
-                <div className="nexus-modal-overlay">
-                    <div className="nexus-modal !max-w-none !max-h-none !w-screen !h-screen !rounded-none !border-0 !m-0 min-w-full">
+                <div className="nexus-modal-overlay p-5">
+                    <div className="nexus-modal !max-w-none !max-h-none w-full h-full rounded-xl flex flex-col overflow-hidden shadow-2xl">
                         <div className="nexus-modal-header">
                             <div className="nexus-page-title">
                                 <h1>Point of Sale</h1>
