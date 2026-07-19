@@ -5,7 +5,7 @@ import Select from 'react-select';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, Package, ShoppingCart, Users, UserX, UsersRound, MapPin, 
-    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X, Edit, MoreVertical
+    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X, Edit, MoreVertical, Eye
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -97,6 +97,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const [savedCarts, setSavedCarts] = useState(() => {
         try { return JSON.parse(localStorage.getItem('pos_savedCarts')) || {}; } catch(e) { return {}; }
     });
+    const [viewingInvoiceSale, setViewingInvoiceSale] = useState(null);
     const [selectedCustomer, setSelectedCustomer] = useState(() => {
         try { return JSON.parse(localStorage.getItem('pos_selectedCustomer')) || null; } catch(e) { return null; }
     });
@@ -737,8 +738,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 <td>{s.branch?.name || 'N/A'}</td>
                                                 <td className="font-medium">${formatNumber(s.total_amount)}</td>
                                                 <td><span className="nexus-badge solid-dark">paid</span></td>
-                                                <td>
-                                                    <a href={`/sales/${s.id}/invoice`} target="_blank" className="text-blue-500 hover:underline flex items-center gap-1"><Download size={14} /> Invoice</a>
+                                                <td className="flex items-center gap-3">
+                                                    <button onClick={() => setViewingInvoiceSale(s)} className="text-indigo-500 hover:underline flex items-center gap-1"><Eye size={14} /> View</button>
+                                                    <a href={`/sales/${s.id}/invoice`} target="_blank" className="text-blue-500 hover:underline flex items-center gap-1"><Download size={14} /> Download</a>
                                                 </td>
                                             </tr>
                                         ))}
@@ -1061,6 +1063,76 @@ export default function Dashboard({ products, employees, customers, sales, branc
                         </>
                     )}
                 </div>
+
+            {/* HTML Invoice Viewer */}
+            {viewingInvoiceSale && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+                        <div className="flex justify-between items-center p-4 border-b border-slate-100">
+                            <h2 className="font-bold text-lg text-slate-800">Invoice #{viewingInvoiceSale.id}</h2>
+                            <button onClick={() => setViewingInvoiceSale(null)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+                            <div className="bg-white p-8 border border-slate-200 shadow-sm mx-auto" style={{maxWidth: '800px'}}>
+                                <div className="flex justify-between items-start border-b border-slate-200 pb-6 mb-6">
+                                    <div>
+                                        <h1 className="text-3xl font-black text-slate-800 mb-1">INVOICE</h1>
+                                        <p className="text-slate-500 text-sm">Sale #{viewingInvoiceSale.id}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="font-bold text-xl text-indigo-600">SinodTech CRM</div>
+                                        <p className="text-slate-500 text-sm">{viewingInvoiceSale.branch?.name || 'Main Branch'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between mb-8">
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Billed To</p>
+                                        <p className="font-bold text-slate-800">{viewingInvoiceSale.customer.first_name} {viewingInvoiceSale.customer.last_name}</p>
+                                        <p className="text-slate-500 text-sm">{viewingInvoiceSale.customer.email}</p>
+                                        <p className="text-slate-500 text-sm">{viewingInvoiceSale.customer.phone}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Date</p>
+                                        <p className="font-bold text-slate-800">{new Date(viewingInvoiceSale.created_at).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <table className="w-full text-left mb-8">
+                                    <thead>
+                                        <tr className="border-b border-slate-200">
+                                            <th className="py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Item</th>
+                                            <th className="py-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Qty</th>
+                                            <th className="py-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Price</th>
+                                            <th className="py-3 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {viewingInvoiceSale.items?.map(item => (
+                                            <tr key={item.id} className="border-b border-slate-100">
+                                                <td className="py-3 font-medium text-slate-700">{item.product?.name || 'Unknown Item'}</td>
+                                                <td className="py-3 text-slate-600 text-right">{item.quantity}</td>
+                                                <td className="py-3 text-slate-600 text-right">${formatNumber(item.price)}</td>
+                                                <td className="py-3 font-medium text-slate-800 text-right">${formatNumber(item.quantity * item.price)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                <div className="flex justify-end">
+                                    <div className="w-64">
+                                        <div className="flex justify-between py-2 font-bold text-lg border-t-2 border-slate-800">
+                                            <span>Total</span>
+                                            <span>${formatNumber(viewingInvoiceSale.total_amount)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-4 border-t border-slate-100 flex justify-end gap-3 bg-white">
+                            <button onClick={() => setViewingInvoiceSale(null)} className="nexus-btn">Close</button>
+                            <a href={`/sales/${viewingInvoiceSale.id}/invoice`} target="_blank" className="nexus-btn primary flex items-center gap-2"><Download size={16}/> Download PDF</a>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* POS Modal */}
             {isPosOpen && (
