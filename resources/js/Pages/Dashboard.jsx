@@ -32,7 +32,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
         }
     }, [activeTab]);
 
-    const [selectedBranch, setSelectedBranch] = useState(branches.length > 0 ? branches[0].id : '');
+    const [selectedBranch, setSelectedBranch] = useState('all');
 
     const sortData = (array) => {
         return [...array].sort((a, b) => {
