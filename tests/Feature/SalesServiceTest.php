@@ -64,6 +64,7 @@ class SalesServiceTest extends TestCase
         $this->expectException(InsufficientStockException::class);
 
         $service->processSale([
+            'branch_id' => $branch->id,
             'customer_id' => $customer->id,
             'items' => [
                 [
