@@ -802,9 +802,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                         <td><button onClick={() => openEmailModal(c)} className="text-blue-600 hover:underline">{c.email}</button></td>
                                                         <td>{c.last_purchase_date ? new Date(c.last_purchase_date).toISOString().split('T')[0] : 'Never'}</td>
                                                         <td><span className={`nexus-badge ${isLost ? 'solid-red' : 'solid-dark'}`}>{isLost ? 'lost' : 'active'}</span></td>
-                                                        <td>
-                                                            <button className="nexus-btn" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }} title="History"><ShoppingCart size={16}/></button>
-                                                            <button className="nexus-btn" onClick={() => { openEmailModal(c); }}><Mail size={16}/></button>
+                                                        <td className="flex gap-2">
+                                                            <button className="nexus-btn" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }} title="History"><History size={16}/></button>
+                                                            <button className="nexus-btn" onClick={() => { openEmailModal(c); }} title="Email"><Mail size={16}/></button>
                                                         </td>
                                                     </tr>
                                                 );
@@ -839,9 +839,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    <button className="nexus-btn w-full justify-center" onClick={() => { setEditCustomer(c); setIsEditCustomerOpen(true); }}><Edit size={16}/> Edit</button>
-                                                    <button className="nexus-btn w-full justify-center" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><ShoppingCart size={16}/> History</button>
-                                                    <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
+                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { setEditCustomer(c); setIsEditCustomerOpen(true); }}><Edit size={16}/> Edit</button>
+                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><History size={16}/> History</button>
+                                                    <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
                                                     {c.phone ? (
                                                         <a href={`tel:${c.phone}`} className="nexus-btn w-full justify-center"><Phone size={16}/> Call</a>
                                                     ) : (
@@ -928,9 +928,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                             placeholder="Select employee..."
                                                         />
                                                     </td>
-                                                    <td>
-                                                        <button className="nexus-btn" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}>History</button>
-                                                        <button className="nexus-btn primary" onClick={() => { openEmailModal(c); }}>Email</button>
+                                                    <td className="flex gap-2">
+                                                        <button className="nexus-btn flex items-center gap-1" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><History size={16}/> History</button>
+                                                        <button className="nexus-btn primary flex items-center gap-1" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
                                                     </td>
                                                 </tr>
                                             ))}
@@ -960,9 +960,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 />
                                             </div>
                                             <div className="flex gap-2">
-                                                <button className="nexus-btn w-full justify-center" onClick={() => { setEditCustomer(c); setIsEditCustomerOpen(true); }}><Edit size={16}/> Edit</button>
-                                                <button className="nexus-btn w-full justify-center" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><ShoppingCart size={16}/> History</button>
-                                                <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
+                                                <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { setEditCustomer(c); setIsEditCustomerOpen(true); }}><Edit size={16}/> Edit</button>
+                                                <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><History size={16}/> History</button>
+                                                <button className="nexus-btn w-full justify-center flex items-center gap-1" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
                                             </div>
                                         </div>
                                     ))}
