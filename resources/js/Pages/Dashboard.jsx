@@ -84,6 +84,9 @@ export default function Dashboard({ products, employees, customers, sales, branc
 
     const getBranchStock = (product, branchId) => {
         if (!branchId) return 0;
+        if (branchId === 'all') {
+            return product.branches?.reduce((total, b) => total + b.pivot.stock_quantity, 0) || 0;
+        }
         const branch = product.branches?.find(b => b.id === branchId);
         return branch ? branch.pivot.stock_quantity : 0;
     };
@@ -243,6 +246,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const checkout = () => {
         if (!selectedCustomer) return toast.error('Select a customer');
         if (cart.length === 0) return toast.error('Cart is empty');
+        if (selectedBranch === 'all') return toast.error('Please select a specific branch for this sale');
         if (cart.some(i => !i.quantity || isNaN(i.quantity) || i.quantity < 1)) return toast.error('Please enter valid quantities for all items');
         
         const loadingToast = toast.loading('Processing sale...');
@@ -595,8 +599,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     '&:hover': { borderColor: '#cbd5e1' }
                                                 })
                                             }}
-                                            options={branches.map(b => ({ value: b.id, label: b.name }))}
-                                            value={selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
+                                            options={[{ value: 'all', label: 'All Branches' }, ...branches.map(b => ({ value: b.id, label: b.name }))]}
+                                            value={selectedBranch === 'all' ? { value: 'all', label: 'All Branches' } : selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
                                             onChange={(opt) => setSelectedBranch(opt.value)}
                                             placeholder="Filter by branch..."
                                         />
@@ -1063,8 +1067,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 }),
                                                 valueContainer: base => ({ ...base, padding: '0 12px' })
                                             }}
-                                            options={branches.map(b => ({ value: b.id, label: b.name }))}
-                                            value={selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
+                                            options={[{ value: 'all', label: 'All Branches' }, ...branches.map(b => ({ value: b.id, label: b.name }))]}
+                                            value={selectedBranch === 'all' ? { value: 'all', label: 'All Branches' } : selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
                                             onChange={(opt) => {
                                                 setSelectedBranch(opt.value);
                                                 setCart([]);
