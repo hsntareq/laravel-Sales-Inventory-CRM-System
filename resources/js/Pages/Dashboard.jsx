@@ -5,7 +5,7 @@ import Select from 'react-select';
 import toast, { Toaster } from 'react-hot-toast';
 import { 
     LayoutDashboard, Package, ShoppingCart, Users, UserX, UsersRound, MapPin, 
-    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone
+    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone, X
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -1006,6 +1006,56 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                         placeholder="Search customer..."
                                         isClearable
                                     />
+                                    {(() => {
+                                        const currentKey = selectedCustomer ? String(selectedCustomer.value) : 'walk-in';
+                                        const savedKeys = Object.keys(savedCarts).filter(key => key !== currentKey && savedCarts[key].length > 0);
+                                        
+                                        if (savedKeys.length === 0) return null;
+                                        
+                                        return (
+                                            <div className="mt-3 flex flex-wrap gap-2">
+                                                {savedKeys.map(key => {
+                                                    const label = key === 'walk-in' ? 'Walk-in Customer' : (customerOptions.find(opt => String(opt.value) === key)?.label || 'Unknown Customer');
+                                                    return (
+                                                        <div key={key} className="inline-flex items-center bg-slate-100 text-slate-700 text-xs px-3 py-1.5 rounded-full border border-slate-200 shadow-sm">
+                                                            <span 
+                                                                className="cursor-pointer font-medium hover:text-blue-600 transition-colors"
+                                                                onClick={() => {
+                                                                    const prevKey = selectedCustomer ? String(selectedCustomer.value) : 'walk-in';
+                                                                    setSavedCarts(prev => {
+                                                                        const newSaved = { ...prev, [prevKey]: cart };
+                                                                        setCart(newSaved[key] || []);
+                                                                        return newSaved;
+                                                                    });
+                                                                    if (key === 'walk-in') {
+                                                                        setSelectedCustomer(null);
+                                                                    } else {
+                                                                        setSelectedCustomer(customerOptions.find(opt => String(opt.value) === key) || null);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                {label} ({savedCarts[key].length})
+                                                            </span>
+                                                            <button 
+                                                                className="ml-2 text-slate-400 hover:text-red-500 transition-colors"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setSavedCarts(prev => {
+                                                                        const newSaved = { ...prev };
+                                                                        delete newSaved[key];
+                                                                        return newSaved;
+                                                                    });
+                                                                }}
+                                                                title="Clear saved cart"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                                 
                                 <div className="flex-1 overflow-y-auto mt-4">
