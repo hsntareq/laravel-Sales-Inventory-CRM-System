@@ -1,0 +1,1005 @@
+import { Head, usePage, router } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import Select from 'react-select';
+import toast, { Toaster } from 'react-hot-toast';
+import { 
+    LayoutDashboard, Package, ShoppingCart, Users, UserX, UsersRound, MapPin, 
+    Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone
+} from 'lucide-react';
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+} from 'recharts';
+import '../../css/custom.css';
+
+export default function Dashboard({ products, employees, customers, sales, branches = [] }) {
+    const [activeTab, setActiveTab] = useState('dashboard');
+    const [selectedBranch, setSelectedBranch] = useState(branches.length > 0 ? branches[0].id : '');
+
+    const getBranchStock = (product, branchId) => {
+        if (!branchId) return 0;
+        const branch = product.branches?.find(b => b.id === branchId);
+        return branch ? branch.pivot.stock_quantity : 0;
+    };
+    const [isPosOpen, setIsPosOpen] = useState(false);
+    const [cart, setCart] = useState([]);
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    
+    // View toggles (grid vs list)
+    const [productView, setProductView] = useState('grid');
+    const [customerView, setCustomerView] = useState('grid');
+    const [lostView, setLostView] = useState('list');
+    const [employeeView, setEmployeeView] = useState('grid');
+    
+    // Modals
+    const [isNewProductOpen, setIsNewProductOpen] = useState(false);
+    const [isNewCustomerOpen, setIsNewCustomerOpen] = useState(false);
+    const [isEmailOpen, setIsEmailOpen] = useState(false);
+    const [emailTarget, setEmailTarget] = useState(null);
+    
+    // Notifications panel
+    const [isNotifOpen, setIsNotifOpen] = useState(false);
+
+    // Forms state
+    const [newProduct, setNewProduct] = useState({ name: '', sku: '', price: '', stock_quantity: '' });
+    const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', email: '' });
+    const [emailForm, setEmailForm] = useState({ subject: '', message: '' });
+    
+    // Filters
+    const [productFilter, setProductFilter] = useState('');
+    const [inactivityThreshold, setInactivityThreshold] = useState(90);
+
+    const { errors, flash, auth } = usePage().props;
+
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (errors?.error) toast.error(errors.error);
+    }, [flash, errors]);
+
+    // POS Logic
+    const addToCart = (product) => {
+        const existing = cart.find(i => i.product_id === product.id);
+        if (existing) {
+            if (existing.quantity >= getBranchStock(product, selectedBranch)) return toast.error('Not enough stock');
+            setCart(cart.map(i => i.product_id === product.id ? { ...i, quantity: i.quantity + 1 } : i));
+        } else {
+            if (getBranchStock(product, selectedBranch) < 1) return toast.error('Out of stock');
+            setCart([...cart, { product_id: product.id, name: product.name, price: product.price, quantity: 1, stock: getBranchStock(product, selectedBranch) }]);
+        }
+    };
+
+    const updateCartQty = (productId, qty) => {
+        const val = parseInt(qty);
+        if (isNaN(val) || val < 1) return;
+        setCart(cart.map(i => {
+            if (i.product_id === productId) {
+                if (val > i.stock) {
+                    toast.error('Not enough stock');
+                    return { ...i, quantity: i.stock };
+                }
+                return { ...i, quantity: val };
+            }
+            return i;
+        }));
+    };
+
+    const removeFromCart = (productId) => {
+        setCart(cart.filter(i => i.product_id !== productId));
+    };
+
+    const checkout = () => {
+        if (!selectedCustomer) return toast.error('Select a customer');
+        if (cart.length === 0) return toast.error('Cart is empty');
+        
+        const loadingToast = toast.loading('Processing sale...');
+        router.post('/sales', {
+            branch_id: selectedBranch,
+            customer_id: selectedCustomer.value,
+            items: cart.map(i => ({ product_id: i.product_id, quantity: i.quantity }))
+        }, {
+            onSuccess: () => {
+                setCart([]);
+                setIsPosOpen(false);
+                toast.dismiss(loadingToast);
+            },
+            onError: () => toast.dismiss(loadingToast)
+        });
+    };
+
+    const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    // API Handlers
+    const handleCreateProduct = (e) => {
+        e.preventDefault();
+        router.post('/products', { ...newProduct, branch_id: selectedBranch }, {
+            onSuccess: () => {
+                setIsNewProductOpen(false);
+                setNewProduct({ name: '', sku: '', price: '', stock_quantity: '' });
+            }
+        });
+    };
+
+    const handleCreateCustomer = (e) => {
+        e.preventDefault();
+        router.post('/customers', newCustomer, {
+            onSuccess: () => {
+                setIsNewCustomerOpen(false);
+                setNewCustomer({ first_name: '', last_name: '', email: '' });
+            }
+        });
+    };
+
+    const handleSendEmail = (e) => {
+        e.preventDefault();
+        router.post(`/customers/${emailTarget.id}/email`, emailForm, {
+            onSuccess: () => {
+                setIsEmailOpen(false);
+                setEmailForm({ subject: '', message: '' });
+            }
+        });
+    };
+
+    const handleAssignEmployee = (customerId, employeeId) => {
+        if (!employeeId) return;
+        router.post(`/customers/${customerId}/assign`, { assigned_employee_id: employeeId }, {
+            onSuccess: () => toast.success('Employee assigned successfully!')
+        });
+    };
+
+    const openEmailModal = (customer) => {
+        setEmailTarget(customer);
+        const isLost = lostCustomers.find(c => c.id === customer.id);
+        if (isLost) {
+            setEmailForm({
+                subject: `Special Offer for you, ${customer.first_name}!`,
+                message: `Hi ${customer.first_name},\n\nWe haven't seen you in a while and wanted to check in. We have some exciting new updates at Nexus ERP that you might love.\n\nPlease let us know if there's anything we can help you with!\n\nBest,\nThe Team`
+            });
+        } else {
+            setEmailForm({
+                subject: `Following up on your account`,
+                message: `Hi ${customer.first_name},\n\nThanks for being a valued customer. Let us know if you need any assistance!\n\nBest,\nThe Team`
+            });
+        }
+        setIsEmailOpen(true);
+    };
+
+    // Chart Data (Mock data for revenue over last 7 days)
+    const chartData = [
+        { name: 'Mon', revenue: 4000, orders: 24 },
+        { name: 'Tue', revenue: 3000, orders: 18 },
+        { name: 'Wed', revenue: 5500, orders: 35 },
+        { name: 'Thu', revenue: 4500, orders: 28 },
+        { name: 'Fri', revenue: 6000, orders: 42 },
+        { name: 'Sat', revenue: 8000, orders: 55 },
+        { name: 'Sun', revenue: 7500, orders: 48 },
+    ];
+
+    // Filtered Data
+    const filteredProducts = products.filter(p => p.name.toLowerCase().includes(productFilter.toLowerCase()) || p.sku.toLowerCase().includes(productFilter.toLowerCase()));
+    const lostCustomers = customers.filter(c => {
+        if (!c.last_purchase_date) return true; // Never purchased
+        const daysSince = Math.floor((new Date() - new Date(c.last_purchase_date)) / (1000 * 60 * 60 * 24));
+        return daysSince >= inactivityThreshold;
+    });
+
+    // React Select Options
+    const customerOptions = customers.map(c => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }));
+    const employeeOptions = employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }));
+
+    return (
+        <div className="nexus-layout">
+            <Head title="Nexus ERP" />
+            <Toaster position="top-right" />
+
+            {/* Sidebar */}
+            <aside className="nexus-sidebar">
+                <div className="nexus-logo">
+                    <div className="nexus-logo-icon">N</div>
+                    <div className="nexus-logo-text">
+                        <span>Nexus ERP</span>
+                        <span className="nexus-logo-subtext">Sales · CRM · Stock</span>
+                    </div>
+                </div>
+
+                <nav className="nexus-nav">
+                    <div className={`nexus-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+                        <LayoutDashboard size={20} />
+                        Dashboard
+                    </div>
+                    <div className={`nexus-nav-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>
+                        <Package size={20} />
+                        Products
+                    </div>
+                    <div className={`nexus-nav-item ${activeTab === 'sales' ? 'active' : ''}`} onClick={() => setActiveTab('sales')}>
+                        <ShoppingCart size={20} />
+                        Sales
+                    </div>
+                    <div className={`nexus-nav-item ${activeTab === 'customers' ? 'active' : ''}`} onClick={() => setActiveTab('customers')}>
+                        <Users size={20} />
+                        Customers
+                    </div>
+                    <div className={`nexus-nav-item ${activeTab === 'lost' ? 'active' : ''}`} onClick={() => setActiveTab('lost')}>
+                        <UserX size={20} />
+                        Lost Customers
+                    </div>
+                    <div className={`nexus-nav-item ${activeTab === 'employees' ? 'active' : ''}`} onClick={() => setActiveTab('employees')}>
+                        <UsersRound size={20} />
+                        Employees
+                    </div>
+                    <div className={`nexus-nav-item ${activeTab === 'branches' ? 'active' : ''}`} onClick={() => setActiveTab('branches')}>
+                        <MapPin size={20} />
+                        Branches
+                    </div>
+                </nav>
+
+                <div className="nexus-user-profile">
+                    <div className="nexus-avatar">
+                        {auth.user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="nexus-user-info">
+                        <span className="nexus-user-name">{auth.user.name}</span>
+                        <span className="nexus-user-email">{auth.user.email}</span>
+                    </div>
+                </div>
+            </aside>
+
+            {/* Main Content Area */}
+            <main className="nexus-main">
+                {/* Topbar */}
+                <header className="nexus-topbar relative">
+                    <div className="nexus-search">
+                        <Search size={18} />
+                        <input type="text" placeholder="Search products, customers, invoices..." />
+                    </div>
+                    <div className="nexus-top-actions">
+                        <button className="nexus-icon-btn relative" onClick={() => setIsNotifOpen(!isNotifOpen)}>
+                            <Bell size={20} />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
+                        </button>
+                        {isNotifOpen && (
+                            <div className="absolute top-16 right-6 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+                                <div className="p-4 border-b font-bold">Notifications</div>
+                                <div className="p-4 text-sm text-gray-600 border-b hover:bg-slate-50 cursor-pointer">
+                                    System: Stock for "Wireless Headphones Pro" is running low.
+                                </div>
+                                <div className="p-4 text-sm text-gray-600 hover:bg-slate-50 cursor-pointer">
+                                    CRM: Marcus Silva was marked as lost.
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </header>
+
+                {/* Dynamic Content */}
+                <div className="nexus-content">
+                    {activeTab === 'dashboard' && (
+                        <>
+                            <div className="nexus-page-header">
+                                <div className="nexus-page-title">
+                                    <h1>Dashboard</h1>
+                                    <p>Overview of sales, inventory and customer health.</p>
+                                </div>
+                                <button className="nexus-btn">
+                                    <Download size={18} /> Export
+                                </button>
+                            </div>
+
+                            <div className="metrics-grid">
+                                <div className="nexus-card">
+                                    <div className="metric-card-header">
+                                        <span>Revenue (All time)</span>
+                                        <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#f1f5f9'}}>$</span>
+                                    </div>
+                                    <div className="stat-value">${sales.reduce((sum, s) => sum + parseFloat(s.total_amount), 0).toFixed(2)}</div>
+                                    <div className="text-sm text-green-600 font-medium">↗ Up to date</div>
+                                </div>
+                                <div className="nexus-card">
+                                    <div className="metric-card-header">
+                                        <span>Orders</span>
+                                        <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#f1f5f9'}}><ShoppingCart size={16}/></span>
+                                    </div>
+                                    <div className="stat-value">{sales.length}</div>
+                                    <div className="text-sm text-green-600 font-medium">↗ +{sales.slice(0,5).length} this week</div>
+                                </div>
+                                <div className="nexus-card">
+                                    <div className="metric-card-header">
+                                        <span>Low Stock Items</span>
+                                        <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#fee2e2', color: '#dc2626'}}><Package size={16}/></span>
+                                    </div>
+                                    <div className="stat-value">{products.filter(p => getBranchStock(p, selectedBranch) < 10).length}</div>
+                                    <div className="text-sm text-red-600 font-medium">↗ attention</div>
+                                </div>
+                                <div className="nexus-card">
+                                    <div className="metric-card-header">
+                                        <span>Lost Customers</span>
+                                        <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#fee2e2', color: '#dc2626'}}><UserX size={16}/></span>
+                                    </div>
+                                    <div className="stat-value">{lostCustomers.length}</div>
+                                    <div className="text-sm text-red-600 font-medium">Requires assignment</div>
+                                </div>
+                            </div>
+
+                            <div className="dashboard-charts-grid">
+                                <div className="nexus-card p-6">
+                                    <h3 className="dashboard-section-title">Revenue Overview</h3>
+                                    <div className="h-[300px] w-full mt-4">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                                <defs>
+                                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1}/>
+                                                        <stop offset="95%" stopColor="#0f172a" stopOpacity={0}/>
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dx={-10} tickFormatter={(val) => `$${val}`} />
+                                                <Tooltip 
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                    formatter={(value) => [`$${value}`, 'Revenue']}
+                                                />
+                                                <Area type="monotone" dataKey="revenue" stroke="#0f172a" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                                <div className="nexus-card p-6">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="dashboard-section-title mb-0">Low Stock Alerts</h3>
+                                        <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab('products')}} className="text-sm text-blue-600 hover:underline">View all</a>
+                                    </div>
+                                    <div className="flex flex-col gap-4">
+                                        {products.filter(p => getBranchStock(p, selectedBranch) < 10).slice(0, 5).map(p => (
+                                            <div key={p.id} className="flex items-center justify-between pb-3 border-b border-gray-100 last:border-0">
+                                                <div>
+                                                    <div className="font-medium text-sm">{p.name}</div>
+                                                    <div className="text-xs text-gray-400 font-mono">{p.sku}</div>
+                                                </div>
+                                                {getBranchStock(p, selectedBranch) <= 0 ? (
+                                                    <span className="nexus-badge solid-red">Out</span>
+                                                ) : (
+                                                    <span className="nexus-badge soft-gray">{getBranchStock(p, selectedBranch)} left</span>
+                                                )}
+                                            </div>
+                                        ))}
+                                        {products.filter(p => getBranchStock(p, selectedBranch) < 10).length === 0 && (
+                                            <div className="text-sm text-gray-500 py-4 text-center">All stock levels are optimal!</div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="dashboard-tables-grid">
+                                <div className="nexus-card p-0 overflow-hidden">
+                                    <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+                                        <h3 className="dashboard-section-title mb-0">Recent Transactions</h3>
+                                        <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab('sales')}} className="text-sm text-blue-600 hover:underline">View all sales</a>
+                                    </div>
+                                    <table className="nexus-table m-0 border-0">
+                                        <thead>
+                                            <tr>
+                                                <th className="bg-gray-50">Customer</th>
+                                                <th className="bg-gray-50">Amount</th>
+                                                <th className="bg-gray-50">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {sales.slice(0, 5).map(s => (
+                                                <tr key={s.id}>
+                                                    <td className="font-medium">{s.customer.first_name} {s.customer.last_name}</td>
+                                                    <td className="font-medium">${parseFloat(s.total_amount).toFixed(2)}</td>
+                                                    <td><span className="nexus-badge solid-dark">paid</span></td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <div className="nexus-card p-0 overflow-hidden">
+                                    <div className="p-5 border-b border-gray-100 flex justify-between items-center">
+                                        <h3 className="dashboard-section-title mb-0">Newest Customers</h3>
+                                        <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab('customers')}} className="text-sm text-blue-600 hover:underline">Manage customers</a>
+                                    </div>
+                                    <div className="flex flex-col">
+                                        {customers.slice(-5).reverse().map(c => (
+                                            <div key={c.id} className="flex items-center gap-3 p-4 border-b border-gray-100 last:border-0">
+                                                <div className="nexus-avatar bg-slate-100 text-slate-600">
+                                                    {c.first_name[0]}{c.last_name[0]}
+                                                </div>
+                                                <div className="flex flex-col flex-1">
+                                                    <span className="font-medium text-sm">{c.first_name} {c.last_name}</span>
+                                                    <span className="text-xs text-gray-500">{c.email}</span>
+                                                </div>
+                                                <a href={`mailto:${c.email}`} className="nexus-icon-btn p-2"><Mail size={14}/></a>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+
+                    {activeTab === 'products' && (
+                        <>
+                            <div className="nexus-page-header">
+                                <div className="nexus-page-title">
+                                    <h1>Products</h1>
+                                    <p>Catalog with SKU, price and real-time stock.</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                        <button className={`p-2 ${productView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setProductView('list')}><List size={18}/></button>
+                                        <button className={`p-2 ${productView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setProductView('grid')}><Grid size={18}/></button>
+                                    </div>
+                                    <button className="nexus-btn primary" onClick={() => setIsNewProductOpen(true)}>
+                                        <Plus size={18} /> New product
+                                    </button>
+                                </div>
+                            </div>
+
+                            {productView === 'list' ? (
+                                <div className="nexus-table-wrapper">
+                                    <table className="nexus-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Product</th>
+                                                <th>SKU</th>
+                                                <th>Price</th>
+                                                <th>Stock</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {products.map(p => (
+                                                <tr key={p.id}>
+                                                    <td className="font-medium">{p.name}</td>
+                                                    <td className="text-gray-500 font-mono text-sm">{p.sku}</td>
+                                                    <td className="font-medium">${parseFloat(p.price).toFixed(2)}</td>
+                                                    <td>
+                                                        {getBranchStock(p, selectedBranch) <= 0 ? <span className="nexus-badge solid-red">Out of stock</span> : 
+                                                         getBranchStock(p, selectedBranch) < 10 ? <span className="nexus-badge soft-gray">Low ({getBranchStock(p, selectedBranch)})</span> : 
+                                                         <span className="nexus-badge soft-gray">{getBranchStock(p, selectedBranch)} in stock</span>}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-4 gap-4">
+                                    {products.map(p => (
+                                        <div key={p.id} className="nexus-card flex flex-col justify-between">
+                                            <div className="w-full h-32 bg-slate-50 rounded-lg flex items-center justify-center mb-4 text-slate-300">
+                                                <Package size={48} />
+                                            </div>
+                                            <div>
+                                                <div className="text-xs text-gray-400 font-mono mb-1">{p.sku}</div>
+                                                <div className="font-medium mb-3">{p.name}</div>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <div className="font-bold text-lg">${parseFloat(p.price).toFixed(2)}</div>
+                                                {getBranchStock(p, selectedBranch) <= 0 ? <span className="nexus-badge outline-red">Out</span> : <span className="text-sm text-gray-500">{getBranchStock(p, selectedBranch)} left</span>}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === 'sales' && (
+                        <>
+                            <div className="nexus-page-header">
+                                <div className="nexus-page-title">
+                                    <h1>Sales</h1>
+                                    <p>Every transaction deducts stock automatically. Invoices emailed on payment.</p>
+                                </div>
+                                <button className="nexus-btn primary" onClick={() => setIsPosOpen(true)}>
+                                    <Plus size={18} /> New sale
+                                </button>
+                            </div>
+
+                            <div className="nexus-table-wrapper">
+                                <table className="nexus-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Invoice</th>
+                                            <th>Date</th>
+                                            <th>Customer</th>
+                                            <th>Total</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {sales.map(s => (
+                                            <tr key={s.id}>
+                                                <td className="text-gray-500 font-mono text-sm">INV-{new Date(s.created_at).toISOString().split('T')[0].replace(/-/g, '')}-{s.id.toString().padStart(3, '0')}</td>
+                                                <td>{new Date(s.created_at).toISOString().split('T')[0]}</td>
+                                                <td className="font-medium">{s.customer.first_name} {s.customer.last_name}</td>
+                                                <td className="font-medium">${parseFloat(s.total_amount).toFixed(2)}</td>
+                                                <td><span className="nexus-badge solid-dark">paid</span></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+
+                    {activeTab === 'customers' && (
+                        <>
+                            <div className="nexus-page-header">
+                                <div className="nexus-page-title">
+                                    <h1>Customers</h1>
+                                    <p>Complete purchase history, frequency and lifecycle status.</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                        <button className={`p-2 ${customerView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setCustomerView('list')}><List size={18}/></button>
+                                        <button className={`p-2 ${customerView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setCustomerView('grid')}><Grid size={18}/></button>
+                                    </div>
+                                    <button className="nexus-btn primary" onClick={() => setIsNewCustomerOpen(true)}>
+                                        <Plus size={18} /> Add customer
+                                    </button>
+                                </div>
+                            </div>
+
+                            {customerView === 'list' ? (
+                                <div className="nexus-table-wrapper">
+                                    <table className="nexus-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Customer</th>
+                                                <th>Contact</th>
+                                                <th>Last Purchase</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {customers.map(c => {
+                                                const isLost = lostCustomers.find(lc => lc.id === c.id);
+                                                return (
+                                                    <tr key={c.id}>
+                                                        <td className="font-medium">{c.first_name} {c.last_name}</td>
+                                                        <td><a href={`mailto:${c.email}`} className="text-blue-600 hover:underline">{c.email}</a></td>
+                                                        <td>{c.last_purchase_date ? new Date(c.last_purchase_date).toISOString().split('T')[0] : 'Never'}</td>
+                                                        <td><span className={`nexus-badge ${isLost ? 'solid-red' : 'solid-dark'}`}>{isLost ? 'lost' : 'active'}</span></td>
+                                                        <td>
+                                                            <button className="nexus-btn" onClick={() => { openEmailModal(c); }}><Mail size={16}/></button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="customers-grid">
+                                    {customers.map(c => {
+                                        const isLost = lostCustomers.find(lc => lc.id === c.id);
+                                        return (
+                                            <div key={c.id} className="nexus-card">
+                                                <div className="customer-card-header">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="nexus-avatar">
+                                                            {c.first_name[0]}{c.last_name[0]}
+                                                        </div>
+                                                        <div className="nexus-user-info">
+                                                            <span className="nexus-user-name">{c.first_name} {c.last_name}</span>
+                                                            <span className="nexus-user-email">{c.email}</span>
+                                                        </div>
+                                                    </div>
+                                                    <span className={`nexus-badge ${isLost ? 'solid-red' : 'solid-dark'}`}>
+                                                        {isLost ? 'lost' : 'active'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between border-b border-gray-100 pb-3 mb-3">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs text-gray-500">Last Purchase</span>
+                                                        <span className="font-medium text-sm">{c.last_purchase_date ? new Date(c.last_purchase_date).toISOString().split('T')[0] : 'Never'}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
+                                                    <a href="tel:+15550000" className="nexus-btn w-full justify-center"><Phone size={16}/> Call</a>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === 'lost' && (
+                        <>
+                            <div className="nexus-page-header">
+                                <div className="nexus-page-title">
+                                    <h1>Lost Customers</h1>
+                                    <p>Inactive for {inactivityThreshold}+ days. Assign to an employee and re-engage.</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden mr-2">
+                                        <button className={`p-2 ${lostView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setLostView('list')}><List size={18}/></button>
+                                        <button className={`p-2 ${lostView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setLostView('grid')}><Grid size={18}/></button>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-500">Threshold:</span>
+                                        <select className="nexus-input py-1 px-2" value={inactivityThreshold} onChange={e => setInactivityThreshold(parseInt(e.target.value))}>
+                                            <option value="30">30 days</option>
+                                            <option value="60">60 days</option>
+                                            <option value="90">90 days</option>
+                                            <option value="120">120 days</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {lostView === 'list' ? (
+                                <div className="nexus-table-wrapper">
+                                    <table className="nexus-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Customer</th>
+                                                <th>Last Purchase</th>
+                                                <th>Assigned To</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {lostCustomers.map(c => (
+                                                <tr key={c.id} className={c.assigned_employee_id ? 'bg-green-50' : ''}>
+                                                    <td className="font-medium">{c.first_name} {c.last_name}</td>
+                                                    <td>{c.last_purchase_date ? new Date(c.last_purchase_date).toISOString().split('T')[0] : 'Never'}</td>
+                                                    <td style={{minWidth: '250px'}}>
+                                                        <Select 
+                                                            options={employeeOptions}
+                                                            value={employeeOptions.find(opt => opt.value === c.assigned_employee_id)}
+                                                            onChange={(selected) => handleAssignEmployee(c.id, selected.value)}
+                                                            placeholder="Select employee..."
+                                                        />
+                                                    </td>
+                                                    <td>
+                                                        <button className="nexus-btn primary" onClick={() => { openEmailModal(c); }}>Email</button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="customers-grid">
+                                    {lostCustomers.map(c => (
+                                        <div key={c.id} className={`nexus-card ${c.assigned_employee_id ? 'bg-green-50 border-green-200' : ''}`}>
+                                            <div className="customer-card-header">
+                                                <div className="nexus-user-info">
+                                                    <span className="nexus-user-name text-lg">{c.first_name} {c.last_name}</span>
+                                                    <span className="nexus-user-email">{c.email}</span>
+                                                </div>
+                                                <span className="nexus-badge solid-red">inactive</span>
+                                            </div>
+                                            <div className="mt-4 mb-2 text-sm text-gray-500 font-medium">Assign Employee</div>
+                                            <div className="mb-4">
+                                                <Select 
+                                                    options={employeeOptions}
+                                                    value={employeeOptions.find(opt => opt.value === c.assigned_employee_id)}
+                                                    onChange={(selected) => handleAssignEmployee(c.id, selected.value)}
+                                                    placeholder="Search to assign..."
+                                                />
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === 'employees' && (
+                        <>
+                            <div className="nexus-page-header">
+                                <div className="nexus-page-title">
+                                    <h1>Employees</h1>
+                                    <p>KPI grows automatically when an assigned lost customer buys again.</p>
+                                </div>
+                                <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                    <button className={`p-2 ${employeeView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setEmployeeView('list')}><List size={18}/></button>
+                                    <button className={`p-2 ${employeeView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setEmployeeView('grid')}><Grid size={18}/></button>
+                                </div>
+                            </div>
+
+                            {employeeView === 'list' ? (
+                                <div className="nexus-table-wrapper">
+                                    <table className="nexus-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Employee</th>
+                                                <th>Email</th>
+                                                <th>KPI Score</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {employees.sort((a,b) => b.kpi_score - a.kpi_score).map(e => (
+                                                <tr key={e.id}>
+                                                    <td className="font-medium">{e.first_name} {e.last_name}</td>
+                                                    <td>{e.email}</td>
+                                                    <td>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="font-bold">{e.kpi_score}/100</span>
+                                                            <div className="w-32 bg-slate-100 h-2 rounded-full">
+                                                                <div className="bg-slate-900 h-2 rounded-full" style={{width: `${Math.min(e.kpi_score, 100)}%`}}></div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <div className="customers-grid">
+                                    {employees.sort((a,b) => b.kpi_score - a.kpi_score).map(e => (
+                                        <div key={e.id} className="nexus-card">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="nexus-avatar bg-slate-900 text-white">
+                                                    {e.first_name[0]}{e.last_name[0]}
+                                                </div>
+                                                <div className="nexus-user-info">
+                                                    <span className="nexus-user-name text-lg">{e.first_name} {e.last_name}</span>
+                                                    <span className="nexus-user-email">Sales Rep</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between items-end mb-2">
+                                                <span className="text-xs text-gray-500 font-medium">KPI Score</span>
+                                                <span className="font-bold text-sm">{e.kpi_score}/100</span>
+                                            </div>
+                                            <div className="w-full bg-slate-100 h-2 rounded-full mb-4">
+                                                <div className="bg-slate-900 h-2 rounded-full" style={{width: `${Math.min(e.kpi_score, 100)}%`}}></div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </>
+                    )}
+
+                    {activeTab === 'branches' && (
+                        <>
+                            <div className="nexus-page-header">
+                                <div className="nexus-page-title">
+                                    <h1>Branches</h1>
+                                    <p>Multi-location inventory and per-branch sales.</p>
+                                </div>
+                            </div>
+
+                            <div className="customers-grid">
+                                {branches.map(branch => (
+                                    <div key={branch.id} className="nexus-card">
+                                        <h3 className="font-bold text-lg mb-1">{branch.name}</h3>
+                                        <p className="text-sm text-gray-500 flex items-center gap-1 mb-4"><MapPin size={14}/> {branch.address || 'Address not set'}</p>
+                                        <div className="flex justify-between border-t border-gray-100 pt-4">
+                                            <div>
+                                                <div className="text-xs text-gray-500 mb-1">Status</div>
+                                                <div className="font-bold text-lg text-green-600">Active</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                </div>
+            </main>
+
+            {/* POS Modal */}
+            {isPosOpen && (
+                <div className="nexus-modal-overlay">
+                    <div className="nexus-modal min-w-[900px]">
+                        <div className="nexus-modal-header">
+                            <div className="nexus-page-title">
+                                <h1>Point of Sale</h1>
+                                <p>Search products, build the order, and check out.</p>
+                            </div>
+                            <button className="nexus-icon-btn" onClick={() => setIsPosOpen(false)}>×</button>
+                        </div>
+                        <div className="nexus-modal-body bg-slate-50 p-0 flex h-[600px]">
+                            <div className="w-2/3 p-6 border-r border-gray-200 overflow-y-auto flex flex-col">
+                                <div className="nexus-search w-full mb-6 flex-shrink-0">
+                                    <Search size={18} />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search product or SKU..." 
+                                        value={productFilter}
+                                        onChange={e => setProductFilter(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start">
+                                    {filteredProducts.map(p => (
+                                        <div key={p.id} className="nexus-card cursor-pointer hover:border-slate-400" onClick={() => addToCart(p)}>
+                                            <div className="font-medium">{p.name}</div>
+                                            <div className="text-xs text-gray-400 font-mono mb-4">{p.sku}</div>
+                                            <div className="flex justify-between items-center">
+                                                <div className="font-bold text-lg">${parseFloat(p.price).toFixed(2)}</div>
+                                                {getBranchStock(p, selectedBranch) <= 0 ? (
+                                                    <span className="nexus-badge soft-red">Out</span>
+                                                ) : (
+                                                    <span className="text-sm text-gray-500">{getBranchStock(p, selectedBranch)} left</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="w-1/3 p-6 flex flex-col bg-white">
+                                <div className="nexus-form-group flex-shrink-0">
+                                    <label>Customer</label>
+                                    <Select 
+                                        options={customerOptions}
+                                        value={selectedCustomer}
+                                        onChange={(opt) => {
+                                            setSelectedCustomer(opt);
+                                            setCart([]);
+                                        }}
+                                        placeholder="Search customer..."
+                                        isClearable
+                                    />
+                                </div>
+                                
+                                <div className="flex-1 overflow-y-auto mt-4">
+                                    {cart.map(item => (
+                                        <div key={item.product_id} className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
+                                            <div className="flex-1">
+                                                <div className="font-medium">{item.name}</div>
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <input 
+                                                        type="number" 
+                                                        className="nexus-input py-1 px-2 w-20 text-center"
+                                                        value={item.quantity}
+                                                        onChange={(e) => updateCartQty(item.product_id, e.target.value)}
+                                                        min="1"
+                                                        max={item.stock}
+                                                    />
+                                                    <span className="text-sm text-gray-500">@ ${parseFloat(item.price).toFixed(2)}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col items-end gap-2">
+                                                <div className="font-semibold">${(item.quantity * item.price).toFixed(2)}</div>
+                                                <button className="text-red-500 hover:text-red-700 p-1" onClick={() => removeFromCart(item.product_id)}>
+                                                    <Trash2 size={16}/>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {cart.length === 0 && (
+                                        <div className="h-full flex items-center justify-center text-gray-400">
+                                            Cart is empty
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="mt-auto pt-4 border-t border-gray-200 flex-shrink-0">
+                                    <div className="flex justify-between text-sm text-gray-500 mb-2">
+                                        <span>Subtotal</span>
+                                        <span>${cartTotal.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-lg font-bold mb-4">
+                                        <span>Total</span>
+                                        <span>${cartTotal.toFixed(2)}</span>
+                                    </div>
+                                    <button 
+                                        className="nexus-btn primary w-full justify-center py-3 text-base"
+                                        onClick={checkout}
+                                    >
+                                        Complete sale
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* New Product Modal */}
+            {isNewProductOpen && (
+                <div className="nexus-modal-overlay">
+                    <div className="nexus-modal max-w-[500px]">
+                        <div className="nexus-modal-header">
+                            <div className="nexus-page-title">
+                                <h1>New Product</h1>
+                            </div>
+                            <button className="nexus-icon-btn" onClick={() => setIsNewProductOpen(false)}>×</button>
+                        </div>
+                        <form onSubmit={handleCreateProduct} className="nexus-modal-body">
+                            <div className="nexus-form-group">
+                                <label>Product Name</label>
+                                <input type="text" className="nexus-input" value={newProduct.name} onChange={e => setNewProduct({...newProduct, name: e.target.value})} required/>
+                            </div>
+                            <div className="nexus-form-group">
+                                <label>SKU</label>
+                                <input type="text" className="nexus-input" value={newProduct.sku} onChange={e => setNewProduct({...newProduct, sku: e.target.value})} required/>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="nexus-form-group flex-1">
+                                    <label>Price ($)</label>
+                                    <input type="number" step="0.01" className="nexus-input" value={newProduct.price} onChange={e => setNewProduct({...newProduct, price: e.target.value})} required/>
+                                </div>
+                                <div className="nexus-form-group flex-1">
+                                    <label>Initial Stock</label>
+                                    <input type="number" className="nexus-input" value={newProduct.stock_quantity} onChange={e => setNewProduct({...newProduct, stock_quantity: e.target.value})} required/>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex justify-end gap-3">
+                                <button type="button" className="nexus-btn" onClick={() => setIsNewProductOpen(false)}>Cancel</button>
+                                <button type="submit" className="nexus-btn primary">Create product</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* New Customer Modal */}
+            {isNewCustomerOpen && (
+                <div className="nexus-modal-overlay">
+                    <div className="nexus-modal max-w-[500px]">
+                        <div className="nexus-modal-header">
+                            <div className="nexus-page-title">
+                                <h1>New Customer</h1>
+                            </div>
+                            <button className="nexus-icon-btn" onClick={() => setIsNewCustomerOpen(false)}>×</button>
+                        </div>
+                        <form onSubmit={handleCreateCustomer} className="nexus-modal-body">
+                            <div className="flex gap-4">
+                                <div className="nexus-form-group flex-1">
+                                    <label>First Name</label>
+                                    <input type="text" className="nexus-input" value={newCustomer.first_name} onChange={e => setNewCustomer({...newCustomer, first_name: e.target.value})} required/>
+                                </div>
+                                <div className="nexus-form-group flex-1">
+                                    <label>Last Name</label>
+                                    <input type="text" className="nexus-input" value={newCustomer.last_name} onChange={e => setNewCustomer({...newCustomer, last_name: e.target.value})} required/>
+                                </div>
+                            </div>
+                            <div className="nexus-form-group">
+                                <label>Email Address</label>
+                                <input type="email" className="nexus-input" value={newCustomer.email} onChange={e => setNewCustomer({...newCustomer, email: e.target.value})} required/>
+                            </div>
+                            <div className="mt-4 flex justify-end gap-3">
+                                <button type="button" className="nexus-btn" onClick={() => setIsNewCustomerOpen(false)}>Cancel</button>
+                                <button type="submit" className="nexus-btn primary">Create customer</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Email Modal */}
+            {isEmailOpen && emailTarget && (
+                <div className="nexus-modal-overlay">
+                    <div className="nexus-modal max-w-[600px]">
+                        <div className="nexus-modal-header">
+                            <div className="nexus-page-title">
+                                <h1>Compose Email</h1>
+                                <p>To: {emailTarget.first_name} {emailTarget.last_name} ({emailTarget.email})</p>
+                            </div>
+                            <button className="nexus-icon-btn" onClick={() => setIsEmailOpen(false)}>×</button>
+                        </div>
+                        <form onSubmit={handleSendEmail} className="nexus-modal-body">
+                            <div className="nexus-form-group">
+                                <label>Subject</label>
+                                <input type="text" className="nexus-input" value={emailForm.subject} onChange={e => setEmailForm({...emailForm, subject: e.target.value})} required/>
+                            </div>
+                            <div className="nexus-form-group">
+                                <label>Message</label>
+                                <textarea className="nexus-input min-h-[150px]" value={emailForm.message} onChange={e => setEmailForm({...emailForm, message: e.target.value})} required></textarea>
+                            </div>
+                            <div className="mt-4 flex justify-end gap-3">
+                                <button type="button" className="nexus-btn" onClick={() => setIsEmailOpen(false)}>Cancel</button>
+                                <button type="submit" className="nexus-btn primary">Send Email</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
