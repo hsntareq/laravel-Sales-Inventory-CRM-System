@@ -376,6 +376,67 @@ export default function Dashboard({ products, employees, customers, sales, branc
         });
     };
 
+    const handleExportStoreData = () => {
+        const rows = [
+            ['Branch Name', 'Status', 'Total Sales Count', 'Total Sales Revenue ($)', 'Total Items in Stock', 'Total Inventory Value ($)']
+        ];
+        
+        let globalSalesCount = 0;
+        let globalSalesRevenue = 0;
+        let globalItemsInStock = 0;
+        let globalInventoryValue = 0;
+        
+        branches.forEach(branch => {
+            const branchSales = sales.filter(s => s.branch_id === branch.id);
+            const totalSalesAmount = branchSales.reduce((sum, s) => sum + parseFloat(s.total_amount || 0), 0);
+            
+            let totalInventoryValue = 0;
+            let totalItemsInStock = 0;
+            
+            products.forEach(p => {
+                const stock = getBranchStock(p, branch.id);
+                if (stock > 0) {
+                    totalItemsInStock += stock;
+                    totalInventoryValue += (stock * parseFloat(p.price || 0));
+                }
+            });
+            
+            globalSalesCount += branchSales.length;
+            globalSalesRevenue += totalSalesAmount;
+            globalItemsInStock += totalItemsInStock;
+            globalInventoryValue += totalInventoryValue;
+            
+            rows.push([
+                `"${branch.name}"`,
+                branch.is_active ? 'Active' : 'Inactive',
+                branchSales.length,
+                totalSalesAmount.toFixed(2),
+                totalItemsInStock,
+                totalInventoryValue.toFixed(2)
+            ]);
+        });
+        
+        rows.push([]);
+        rows.push([
+            'STORE TOTAL',
+            '-',
+            globalSalesCount,
+            globalSalesRevenue.toFixed(2),
+            globalItemsInStock,
+            globalInventoryValue.toFixed(2)
+        ]);
+
+        const csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `store_inventory_sales_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast.success("Store data exported to CSV!");
+    };
+
     const openEmailModal = (customer) => {
         setEmailTarget(customer);
         const isLost = lostCustomers.find(c => c.id === customer.id);
@@ -507,7 +568,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <h1>Dashboard</h1>
                                     <p>Overview of sales, inventory and customer health.</p>
                                 </div>
-                                <button className="nexus-btn">
+                                <button className="nexus-btn" onClick={handleExportStoreData}>
                                     <Download size={18} /> Export
                                 </button>
                             </div>
