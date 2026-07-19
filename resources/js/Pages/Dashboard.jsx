@@ -443,8 +443,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </button>
                             </div>
 
-                            <div className="metrics-grid">
-                                <div className="nexus-card">
+                            <div className="dashboard-stats-grid">
+                                <div className="nexus-card cursor-pointer hover:border-slate-300 transition-colors" onClick={() => setActiveTab('sales')}>
                                     <div className="metric-card-header">
                                         <span>Revenue (All time)</span>
                                         <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#f1f5f9'}}>$</span>
@@ -452,7 +452,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <div className="stat-value">${sales.reduce((sum, s) => sum + parseFloat(s.total_amount), 0).toFixed(2)}</div>
                                     <div className="text-sm text-green-600 font-medium">↗ Up to date</div>
                                 </div>
-                                <div className="nexus-card">
+                                <div className="nexus-card cursor-pointer hover:border-slate-300 transition-colors" onClick={() => setActiveTab('sales')}>
                                     <div className="metric-card-header">
                                         <span>Orders</span>
                                         <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#f1f5f9'}}><ShoppingCart size={16}/></span>
@@ -460,7 +460,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <div className="stat-value">{sales.length}</div>
                                     <div className="text-sm text-green-600 font-medium">↗ +{sales.slice(0,5).length} this week</div>
                                 </div>
-                                <div className="nexus-card">
+                                <div className="nexus-card cursor-pointer hover:border-slate-300 transition-colors" onClick={() => setActiveTab('inventory')}>
                                     <div className="metric-card-header">
                                         <span>Low Stock Items</span>
                                         <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#fee2e2', color: '#dc2626'}}><Package size={16}/></span>
@@ -468,7 +468,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <div className="stat-value">{products.filter(p => getBranchStock(p, selectedBranch) < 10).length}</div>
                                     <div className="text-sm text-red-600 font-medium">↗ attention</div>
                                 </div>
-                                <div className="nexus-card">
+                                <div className="nexus-card cursor-pointer hover:border-slate-300 transition-colors" onClick={() => setActiveTab('lost-customers')}>
                                     <div className="metric-card-header">
                                         <span>Lost Customers</span>
                                         <span className="nexus-icon-btn" style={{width: 32, height: 32, background: '#fee2e2', color: '#dc2626'}}><UserX size={16}/></span>
