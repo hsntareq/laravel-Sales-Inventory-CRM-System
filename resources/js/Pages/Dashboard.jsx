@@ -1056,7 +1056,6 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             </div>
                             <div className="w-1/3 p-6 flex flex-col bg-white">
                                 <div className="nexus-form-group flex-shrink-0">
-                                    <label>Customer</label>
                                     <Select menuPosition="fixed" menuPortalTarget={document.body} styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }} 
                                         options={customerOptions}
                                         value={selectedCustomer}
