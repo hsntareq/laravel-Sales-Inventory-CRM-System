@@ -1000,14 +1000,27 @@ export default function Dashboard({ products, employees, customers, sales, branc
                         </div>
                         <div className="nexus-modal-body bg-slate-50 p-0 flex flex-1 overflow-hidden h-full">
                             <div className="w-2/3 p-6 border-r border-gray-200 overflow-y-auto flex flex-col">
-                                <div className="nexus-search w-full mb-6 flex-shrink-0">
-                                    <Search size={18} />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search product or SKU..." 
-                                        value={productFilter}
-                                        onChange={e => setProductFilter(e.target.value)}
-                                    />
+                                <div className="flex gap-4 mb-6 flex-shrink-0">
+                                    <div className="nexus-search flex-1">
+                                        <Search size={18} />
+                                        <input 
+                                            type="text" 
+                                            placeholder="Search product or SKU..." 
+                                            value={productFilter}
+                                            onChange={e => setProductFilter(e.target.value)}
+                                        />
+                                    </div>
+                                    <div className="w-64">
+                                        <Select menuPosition="fixed" menuPortalTarget={document.body} styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                                            options={branches.map(b => ({ value: b.id, label: b.name }))}
+                                            value={selectedBranch ? { value: selectedBranch, label: branches.find(b => b.id === selectedBranch)?.name } : null}
+                                            onChange={(opt) => {
+                                                setSelectedBranch(opt.value);
+                                                setCart([]);
+                                            }}
+                                            placeholder="Select store..."
+                                        />
+                                    </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4 flex-1 overflow-y-auto content-start">
                                     {filteredProducts.map(p => (
