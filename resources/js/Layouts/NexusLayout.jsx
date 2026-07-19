@@ -1,13 +1,26 @@
 import { Link, usePage, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-    LayoutDashboard, Package, ShoppingCart, Users, UserX, UsersRound, MapPin
+    LayoutDashboard, Package, ShoppingCart, Users, UserX, UsersRound, MapPin, ChevronUp, ChevronDown
 } from 'lucide-react';
 import '../../css/custom.css';
 
 export default function NexusLayout({ children, activeTab = null, onTabChange = null }) {
     const { auth } = usePage().props;
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+    const profileMenuRef = useRef(null);
+
+    useEffect(() => {
+        function handleClickOutside(event) {
+            if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+                setIsProfileMenuOpen(false);
+            }
+        }
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
     
     const currentTab = activeTab || (typeof window !== 'undefined' 
         ? new URLSearchParams(window.location.search).get('tab') || 'dashboard'
@@ -66,13 +79,16 @@ export default function NexusLayout({ children, activeTab = null, onTabChange = 
                     </a>
                 </nav>
 
-                <div className="nexus-user-profile cursor-pointer relative" onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}>
+                <div ref={profileMenuRef} className="nexus-user-profile cursor-pointer relative" onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}>
                     <div className="nexus-avatar">
                         {auth.user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
                     </div>
                     <div className="nexus-user-info flex-1">
                         <span className="nexus-user-name">{auth.user.name}</span>
                         <span className="nexus-user-email">{auth.user.email}</span>
+                    </div>
+                    <div className="text-gray-400 ml-auto">
+                        {isProfileMenuOpen ? <ChevronDown size={18} /> : <ChevronUp size={18} />}
                     </div>
                     
                     {isProfileMenuOpen && (
