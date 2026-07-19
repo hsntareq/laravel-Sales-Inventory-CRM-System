@@ -1,4 +1,5 @@
-import { Head, usePage, router } from '@inertiajs/react';
+import { Head, usePage, router, Link } from '@inertiajs/react';
+import NexusLayout from '@/Layouts/NexusLayout';
 import { useState, useEffect } from 'react';
 import Select from 'react-select';
 import toast, { Toaster } from 'react-hot-toast';
@@ -7,13 +8,34 @@ import {
     Search, Bell, Filter, Plus, Download, Grid, List, Trash2, Mail, Phone
 } from 'lucide-react';
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import '../../css/custom.css';
 
 export default function Dashboard({ products, employees, customers, sales, branches = [] }) {
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const initialTab = typeof window !== 'undefined' 
+        ? new URLSearchParams(window.location.search).get('tab') || 'dashboard'
+        : 'dashboard';
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const url = new URL(window.location);
+            url.searchParams.set('tab', activeTab);
+            window.history.pushState({}, '', url);
+        }
+    }, [activeTab]);
+
     const [selectedBranch, setSelectedBranch] = useState(branches.length > 0 ? branches[0].id : '');
+
+    const toggleSort = (field) => {
+        if (sortField === field) {
+            setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+        } else {
+            setSortField(field);
+            setSortOrder('asc');
+        }
+    };
 
     const getBranchStock = (product, branchId) => {
         if (!branchId) return 0;
@@ -24,6 +46,68 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const [cart, setCart] = useState([]);
     const [selectedCustomer, setSelectedCustomer] = useState(null);
     
+    // Search and Pagination
+    const [globalSearch, setGlobalSearch] = useState('');
+    const [assignmentFilter, setAssignmentFilter] = useState('all');
+    const [sortField, setSortField] = useState('first_name');
+    const [sortOrder, setSortOrder] = useState('asc');
+    const [pageInventory, setPageInventory] = useState(1);
+    const [pageActiveCustomers, setPageActiveCustomers] = useState(1);
+    const [pageLostCustomers, setPageLostCustomers] = useState(1);
+    const [pageEmployees, setPageEmployees] = useState(1);
+    const [pageBranches, setPageBranches] = useState(1);
+
+    useEffect(() => {
+        setPageInventory(1);
+        setPageActiveCustomers(1);
+        setPageLostCustomers(1);
+        setPageEmployees(1);
+        setPageBranches(1);
+        setPageSales(1);
+    }, [globalSearch, activeTab, assignmentFilter]);
+
+    const itemsPerPage = 10;
+    const Pagination = ({ total, page, setPage }) => {
+        const totalPages = Math.ceil(total / itemsPerPage);
+        if (totalPages <= 1) return null;
+
+        const getPageNumbers = () => {
+            const pages = [];
+            if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+            } else {
+                if (page <= 4) {
+                    pages.push(1, 2, 3, 4, 5, '...', totalPages);
+                } else if (page >= totalPages - 3) {
+                    pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+                } else {
+                    pages.push(1, '...', page - 1, page, page + 1, '...', totalPages);
+                }
+            }
+            return pages;
+        };
+
+        return (
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-100">
+                <span className="text-sm text-gray-500">Showing page {page} of {totalPages} ({total} items)</span>
+                <div className="flex gap-1 items-center">
+                    <button className="nexus-btn px-3 border-0 bg-slate-50 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled={page === 1} onClick={() => setPage(page - 1)}>Previous</button>
+                    {getPageNumbers().map((p, i) => (
+                        <button 
+                            key={i} 
+                            disabled={p === '...' || page === p}
+                            onClick={() => p !== '...' && page !== p && setPage(p)}
+                            className={`nexus-btn px-3.5 py-1.5 min-w-[36px] flex items-center justify-center ${page === p ? 'bg-slate-50 text-slate-900 font-semibold border-slate-200 opacity-50 cursor-not-allowed' : p === '...' ? 'border-transparent shadow-none hover:bg-transparent cursor-default px-1' : 'bg-white hover:bg-slate-50 text-slate-600'}`}
+                        >
+                            {p}
+                        </button>
+                    ))}
+                    <button className="nexus-btn px-3 border-0 bg-slate-50 text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed" disabled={page === totalPages} onClick={() => setPage(page + 1)}>Next</button>
+                </div>
+            </div>
+        );
+    };
+
     // View toggles (grid vs list)
     const [productView, setProductView] = useState('grid');
     const [customerView, setCustomerView] = useState('grid');
@@ -35,14 +119,32 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const [isNewCustomerOpen, setIsNewCustomerOpen] = useState(false);
     const [isEmailOpen, setIsEmailOpen] = useState(false);
     const [emailTarget, setEmailTarget] = useState(null);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [historyTarget, setHistoryTarget] = useState(null);
     
     // Notifications panel
     const [isNotifOpen, setIsNotifOpen] = useState(false);
+    const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
 
     // Forms state
     const [newProduct, setNewProduct] = useState({ name: '', sku: '', price: '', stock_quantity: '' });
     const [newCustomer, setNewCustomer] = useState({ first_name: '', last_name: '', email: '' });
     const [emailForm, setEmailForm] = useState({ subject: '', message: '' });
+
+    const generateSKU = () => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        const segment1 = Math.floor(1000 + Math.random() * 9000);
+        let segment2 = '';
+        for (let i = 0; i < 4; i++) {
+            segment2 += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return `SKU-${segment1}-${segment2}`;
+    };
+
+    const openNewProductModal = () => {
+        setNewProduct({ name: '', sku: generateSKU(), price: '', stock_quantity: '' });
+        setIsNewProductOpen(true);
+    };
     
     // Filters
     const [productFilter, setProductFilter] = useState('');
@@ -156,7 +258,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
         } else {
             setEmailForm({
                 subject: `Following up on your account`,
-                message: `Hi ${customer.first_name},\n\nThanks for being a valued customer. Let us know if you need any assistance!\n\nBest,\nThe Team`
+                message: `Hello ${customer.first_name}\n\nWe appreciate you being a valued client. Please let us know if you require any help!\n\nBest,\nThe Group`
             });
         }
         setIsEmailOpen(true);
@@ -185,71 +287,49 @@ export default function Dashboard({ products, employees, customers, sales, branc
     const customerOptions = customers.map(c => ({ value: c.id, label: `${c.first_name} ${c.last_name}` }));
     const employeeOptions = employees.map(e => ({ value: e.id, label: `${e.first_name} ${e.last_name}` }));
 
+    // Derived Search Data
+    const filteredProductsGlobal = products.filter(p => p.name.toLowerCase().includes(globalSearch.toLowerCase()) || p.sku.toLowerCase().includes(globalSearch.toLowerCase()));
+    const paginatedProducts = filteredProductsGlobal.slice((pageInventory - 1) * itemsPerPage, pageInventory * itemsPerPage);
+
+    const activeCustomers = customers.filter(c => !lostCustomers.find(lc => lc.id === c.id));
+    const filteredActiveCustomers = activeCustomers.filter(c => c.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || c.last_name.toLowerCase().includes(globalSearch.toLowerCase()) || c.email.toLowerCase().includes(globalSearch.toLowerCase()));
+    const paginatedActiveCustomers = filteredActiveCustomers.slice((pageActiveCustomers - 1) * itemsPerPage, pageActiveCustomers * itemsPerPage);
+    
+    const filteredLostCustomers = lostCustomers.filter(c => {
+        const matchesSearch = c.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || c.last_name.toLowerCase().includes(globalSearch.toLowerCase()) || c.email.toLowerCase().includes(globalSearch.toLowerCase());
+        const matchesFilter = assignmentFilter === 'all' ? true : (assignmentFilter === 'assigned' ? c.assigned_employee_id !== null : c.assigned_employee_id === null);
+        return matchesSearch && matchesFilter;
+    });
+    const sortedLostCustomers = [...filteredLostCustomers].sort((a, b) => {
+        let valA = a[sortField];
+        let valB = b[sortField];
+        if (sortField === 'first_name') {
+            valA = (a.first_name + ' ' + a.last_name).toLowerCase();
+            valB = (b.first_name + ' ' + b.last_name).toLowerCase();
+        }
+        if (!valA) valA = '';
+        if (!valB) valB = '';
+        if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+    });
+    const paginatedLostCustomers = sortedLostCustomers.slice((pageLostCustomers - 1) * itemsPerPage, pageLostCustomers * itemsPerPage);
+
+    const filteredSales = sales.filter(s => s.customer.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || s.customer.last_name.toLowerCase().includes(globalSearch.toLowerCase()));
+    const [pageSales, setPageSales] = useState(1);
+    const paginatedSales = filteredSales.slice((pageSales - 1) * itemsPerPage, pageSales * itemsPerPage);
+
+    const filteredEmployees = employees.sort((a,b) => b.kpi_score - a.kpi_score).filter(e => e.first_name.toLowerCase().includes(globalSearch.toLowerCase()) || e.last_name.toLowerCase().includes(globalSearch.toLowerCase()) || e.email.toLowerCase().includes(globalSearch.toLowerCase()));
+    const paginatedEmployees = filteredEmployees.slice((pageEmployees - 1) * itemsPerPage, pageEmployees * itemsPerPage);
+    
+    const filteredBranches = branches.filter(b => b.name.toLowerCase().includes(globalSearch.toLowerCase()) || (b.location || '').toLowerCase().includes(globalSearch.toLowerCase()));
+    const paginatedBranches = filteredBranches.slice((pageBranches - 1) * itemsPerPage, pageBranches * itemsPerPage);
+
     return (
-        <div className="nexus-layout">
-            <Head title="Nexus ERP" />
-            <Toaster position="top-right" />
-
-            {/* Sidebar */}
-            <aside className="nexus-sidebar">
-                <div className="nexus-logo">
-                    <div className="nexus-logo-icon">N</div>
-                    <div className="nexus-logo-text">
-                        <span>Nexus ERP</span>
-                        <span className="nexus-logo-subtext">Sales · CRM · Stock</span>
-                    </div>
-                </div>
-
-                <nav className="nexus-nav">
-                    <div className={`nexus-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-                        <LayoutDashboard size={20} />
-                        Dashboard
-                    </div>
-                    <div className={`nexus-nav-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')}>
-                        <Package size={20} />
-                        Products
-                    </div>
-                    <div className={`nexus-nav-item ${activeTab === 'sales' ? 'active' : ''}`} onClick={() => setActiveTab('sales')}>
-                        <ShoppingCart size={20} />
-                        Sales
-                    </div>
-                    <div className={`nexus-nav-item ${activeTab === 'customers' ? 'active' : ''}`} onClick={() => setActiveTab('customers')}>
-                        <Users size={20} />
-                        Customers
-                    </div>
-                    <div className={`nexus-nav-item ${activeTab === 'lost' ? 'active' : ''}`} onClick={() => setActiveTab('lost')}>
-                        <UserX size={20} />
-                        Lost Customers
-                    </div>
-                    <div className={`nexus-nav-item ${activeTab === 'employees' ? 'active' : ''}`} onClick={() => setActiveTab('employees')}>
-                        <UsersRound size={20} />
-                        Employees
-                    </div>
-                    <div className={`nexus-nav-item ${activeTab === 'branches' ? 'active' : ''}`} onClick={() => setActiveTab('branches')}>
-                        <MapPin size={20} />
-                        Branches
-                    </div>
-                </nav>
-
-                <div className="nexus-user-profile">
-                    <div className="nexus-avatar">
-                        {auth.user.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()}
-                    </div>
-                    <div className="nexus-user-info">
-                        <span className="nexus-user-name">{auth.user.name}</span>
-                        <span className="nexus-user-email">{auth.user.email}</span>
-                    </div>
-                </div>
-            </aside>
-
-            {/* Main Content Area */}
-            <main className="nexus-main">
+        <NexusLayout activeTab={activeTab} onTabChange={setActiveTab}>
                 {/* Topbar */}
                 <header className="nexus-topbar relative">
-                    <div className="nexus-search">
-                        <Search size={18} />
-                        <input type="text" placeholder="Search products, customers, invoices..." />
-                    </div>
+                    <div className="nexus-search"></div>
                     <div className="nexus-top-actions">
                         <button className="nexus-icon-btn relative" onClick={() => setIsNotifOpen(!isNotifOpen)}>
                             <Bell size={20} />
@@ -320,25 +400,20 @@ export default function Dashboard({ products, employees, customers, sales, branc
 
                             <div className="dashboard-charts-grid">
                                 <div className="nexus-card p-6">
-                                    <h3 className="dashboard-section-title">Revenue Overview</h3>
+                                    <h3 className="dashboard-section-title">Sales — last 7 days</h3>
                                     <div className="h-[300px] w-full mt-4">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                                <defs>
-                                                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#0f172a" stopOpacity={0.1}/>
-                                                        <stop offset="95%" stopColor="#0f172a" stopOpacity={0}/>
-                                                    </linearGradient>
-                                                </defs>
+                                            <BarChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dy={10} />
-                                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dx={-10} tickFormatter={(val) => `$${val}`} />
+                                                <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 12}} dx={-10} tickFormatter={(val) => `${val}`} />
                                                 <Tooltip 
                                                     contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                    formatter={(value) => [`$${value}`, 'Revenue']}
+                                                    cursor={{fill: '#f8fafc'}}
+                                                    formatter={(value) => [`${value}`, 'Revenue']}
                                                 />
-                                                <Area type="monotone" dataKey="revenue" stroke="#0f172a" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
-                                            </AreaChart>
+                                                <Bar dataKey="revenue" fill="#0f172a" radius={[4, 4, 0, 0]} />
+                                            </BarChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </div>
@@ -352,12 +427,12 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             <div key={p.id} className="flex items-center justify-between pb-3 border-b border-gray-100 last:border-0">
                                                 <div>
                                                     <div className="font-medium text-sm">{p.name}</div>
-                                                    <div className="text-xs text-gray-400 font-mono">{p.sku}</div>
+                                                    <div className="text-xs text-gray-400 mt-1">{p.sku} · {selectedBranch ? branches.find(b => b.id === selectedBranch)?.name : 'All branches'}</div>
                                                 </div>
                                                 {getBranchStock(p, selectedBranch) <= 0 ? (
-                                                    <span className="nexus-badge solid-red">Out</span>
+                                                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-red-600 text-white">0 left</span>
                                                 ) : (
-                                                    <span className="nexus-badge soft-gray">{getBranchStock(p, selectedBranch)} left</span>
+                                                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-700">{getBranchStock(p, selectedBranch)} left</span>
                                                 )}
                                             </div>
                                         ))}
@@ -371,27 +446,23 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             <div className="dashboard-tables-grid">
                                 <div className="nexus-card p-0 overflow-hidden">
                                     <div className="p-5 border-b border-gray-100 flex justify-between items-center">
-                                        <h3 className="dashboard-section-title mb-0">Recent Transactions</h3>
-                                        <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab('sales')}} className="text-sm text-blue-600 hover:underline">View all sales</a>
+                                        <h3 className="dashboard-section-title mb-0">Recent orders</h3>
+                                        <a href="#" onClick={(e) => {e.preventDefault(); setActiveTab('sales')}} className="text-sm text-blue-600 hover:underline">View all</a>
                                     </div>
-                                    <table className="nexus-table m-0 border-0">
-                                        <thead>
-                                            <tr>
-                                                <th className="bg-gray-50">Customer</th>
-                                                <th className="bg-gray-50">Amount</th>
-                                                <th className="bg-gray-50">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {sales.slice(0, 5).map(s => (
-                                                <tr key={s.id}>
-                                                    <td className="font-medium">{s.customer.first_name} {s.customer.last_name}</td>
-                                                    <td className="font-medium">${parseFloat(s.total_amount).toFixed(2)}</td>
-                                                    <td><span className="nexus-badge solid-dark">paid</span></td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                    <div className="flex flex-col">
+                                        {sales.slice(0, 5).map(s => (
+                                            <div key={s.id} className="flex items-center justify-between p-4 border-b border-gray-50 last:border-0 hover:bg-slate-50 transition-colors">
+                                                <div>
+                                                    <div className="font-medium text-sm text-slate-800">{s.customer.first_name} {s.customer.last_name}</div>
+                                                    <div className="text-xs text-slate-500 mt-1">{s.items?.[0]?.product?.name || 'Multiple items'}</div>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="font-medium text-sm text-slate-800">${parseFloat(s.total_amount).toFixed(2)}</div>
+                                                    <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-slate-900 text-white">paid</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="nexus-card p-0 overflow-hidden">
@@ -409,7 +480,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     <span className="font-medium text-sm">{c.first_name} {c.last_name}</span>
                                                     <span className="text-xs text-gray-500">{c.email}</span>
                                                 </div>
-                                                <a href={`mailto:${c.email}`} className="nexus-icon-btn p-2"><Mail size={14}/></a>
+                                                <button onClick={() => openEmailModal(c)} className="nexus-icon-btn p-2"><Mail size={14}/></button>
                                             </div>
                                         ))}
                                     </div>
@@ -425,12 +496,13 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <h1>Products</h1>
                                     <p>Catalog with SKU, price and real-time stock.</p>
                                 </div>
-                                <div className="flex gap-3">
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search products..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
                                     <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
                                         <button className={`p-2 ${productView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setProductView('list')}><List size={18}/></button>
                                         <button className={`p-2 ${productView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setProductView('grid')}><Grid size={18}/></button>
                                     </div>
-                                    <button className="nexus-btn primary" onClick={() => setIsNewProductOpen(true)}>
+                                    <button className="nexus-btn primary" onClick={openNewProductModal}>
                                         <Plus size={18} /> New product
                                     </button>
                                 </div>
@@ -448,7 +520,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {products.map(p => (
+                                            {paginatedProducts.map(p => (
                                                 <tr key={p.id}>
                                                     <td className="font-medium">{p.name}</td>
                                                     <td className="text-gray-500 font-mono text-sm">{p.sku}</td>
@@ -465,7 +537,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-4 gap-4">
-                                    {products.map(p => (
+                                    {paginatedProducts.map(p => (
                                         <div key={p.id} className="nexus-card flex flex-col justify-between">
                                             <div className="w-full h-32 bg-slate-50 rounded-lg flex items-center justify-center mb-4 text-slate-300">
                                                 <Package size={48} />
@@ -482,6 +554,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     ))}
                                 </div>
                             )}
+                            <Pagination total={filteredProductsGlobal.length} page={pageInventory} setPage={setPageInventory} />
                         </>
                     )}
 
@@ -492,9 +565,15 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <h1>Sales</h1>
                                     <p>Every transaction deducts stock automatically. Invoices emailed on payment.</p>
                                 </div>
-                                <button className="nexus-btn primary" onClick={() => setIsPosOpen(true)}>
-                                    <Plus size={18} /> New sale
-                                </button>
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search sales..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search sales..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
+                                    <button className="nexus-btn primary" onClick={() => setIsPosOpen(true)}>
+                                        <Plus size={18} /> New sale
+                                    </button>
+                                </div>
+                                </div>
                             </div>
 
                             <div className="nexus-table-wrapper">
@@ -509,7 +588,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {sales.map(s => (
+                                        {paginatedSales.map(s => (
                                             <tr key={s.id}>
                                                 <td className="text-gray-500 font-mono text-sm">INV-{new Date(s.created_at).toISOString().split('T')[0].replace(/-/g, '')}-{s.id.toString().padStart(3, '0')}</td>
                                                 <td>{new Date(s.created_at).toISOString().split('T')[0]}</td>
@@ -521,6 +600,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     </tbody>
                                 </table>
                             </div>
+                            <Pagination total={filteredSales.length} page={pageSales} setPage={setPageSales} />
                         </>
                     )}
 
@@ -531,7 +611,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <h1>Customers</h1>
                                     <p>Complete purchase history, frequency and lifecycle status.</p>
                                 </div>
-                                <div className="flex gap-3">
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search customers..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
                                     <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
                                         <button className={`p-2 ${customerView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setCustomerView('list')}><List size={18}/></button>
                                         <button className={`p-2 ${customerView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setCustomerView('grid')}><Grid size={18}/></button>
@@ -555,15 +636,16 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {customers.map(c => {
+                                            {paginatedActiveCustomers.map(c => {
                                                 const isLost = lostCustomers.find(lc => lc.id === c.id);
                                                 return (
                                                     <tr key={c.id}>
                                                         <td className="font-medium">{c.first_name} {c.last_name}</td>
-                                                        <td><a href={`mailto:${c.email}`} className="text-blue-600 hover:underline">{c.email}</a></td>
+                                                        <td><button onClick={() => openEmailModal(c)} className="text-blue-600 hover:underline">{c.email}</button></td>
                                                         <td>{c.last_purchase_date ? new Date(c.last_purchase_date).toISOString().split('T')[0] : 'Never'}</td>
                                                         <td><span className={`nexus-badge ${isLost ? 'solid-red' : 'solid-dark'}`}>{isLost ? 'lost' : 'active'}</span></td>
                                                         <td>
+                                                            <button className="nexus-btn" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }} title="History"><ShoppingCart size={16}/></button>
                                                             <button className="nexus-btn" onClick={() => { openEmailModal(c); }}><Mail size={16}/></button>
                                                         </td>
                                                     </tr>
@@ -574,7 +656,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </div>
                             ) : (
                                 <div className="customers-grid">
-                                    {customers.map(c => {
+                                        {paginatedActiveCustomers.map(c => {
                                         const isLost = lostCustomers.find(lc => lc.id === c.id);
                                         return (
                                             <div key={c.id} className="nexus-card">
@@ -599,6 +681,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                     </div>
                                                 </div>
                                                 <div className="flex gap-2">
+                                                    <button className="nexus-btn w-full justify-center" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><ShoppingCart size={16}/> History</button>
                                                     <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
                                                     <a href="tel:+15550000" className="nexus-btn w-full justify-center"><Phone size={16}/> Call</a>
                                                 </div>
@@ -607,6 +690,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     })}
                                 </div>
                             )}
+                            <Pagination total={filteredActiveCustomers.length} page={pageActiveCustomers} setPage={setPageActiveCustomers} />
                         </>
                     )}
 
@@ -617,7 +701,8 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <h1>Lost Customers</h1>
                                     <p>Inactive for {inactivityThreshold}+ days. Assign to an employee and re-engage.</p>
                                 </div>
-                                <div className="flex gap-3">
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search lost customers..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
                                     <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden mr-2">
                                         <button className={`p-2 ${lostView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setLostView('list')}><List size={18}/></button>
                                         <button className={`p-2 ${lostView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setLostView('grid')}><Grid size={18}/></button>
@@ -639,19 +724,41 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <table className="nexus-table">
                                         <thead>
                                             <tr>
-                                                <th>Customer</th>
-                                                <th>Last Purchase</th>
+                                                <th className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort('first_name')}>
+                                                    <div className="flex items-center gap-1">
+                                                        Customer
+                                                        {sortField === 'first_name' && <span className="text-gray-400">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                    </div>
+                                                </th>
+                                                <th className="cursor-pointer hover:bg-slate-50 transition-colors" onClick={() => toggleSort('last_purchase_date')}>
+                                                    <div className="flex items-center gap-1">
+                                                        Last Purchase
+                                                        {sortField === 'last_purchase_date' && <span className="text-gray-400">{sortOrder === 'asc' ? '↑' : '↓'}</span>}
+                                                    </div>
+                                                </th>
+                                                <th>
+                                                    <select className="bg-transparent border-0 font-semibold text-gray-500 uppercase text-xs tracking-wider outline-none p-0 cursor-pointer" value={assignmentFilter} onChange={e => setAssignmentFilter(e.target.value)}>
+                                                        <option value="all">Status (All)</option>
+                                                        <option value="assigned">Assigned</option>
+                                                        <option value="unassigned">Unassigned</option>
+                                                    </select>
+                                                </th>
                                                 <th>Assigned To</th>
                                                 <th>Action</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {lostCustomers.map(c => (
+                                            {paginatedLostCustomers.map(c => (
                                                 <tr key={c.id} className={c.assigned_employee_id ? 'bg-green-50' : ''}>
                                                     <td className="font-medium">{c.first_name} {c.last_name}</td>
                                                     <td>{c.last_purchase_date ? new Date(c.last_purchase_date).toISOString().split('T')[0] : 'Never'}</td>
+                                                    <td>
+                                                        {c.assigned_employee_id 
+                                                            ? <span className="nexus-badge solid-green text-[10px] tracking-wider font-bold px-2 py-1">ASSIGNED</span> 
+                                                            : <span className="nexus-badge solid-gray text-[10px] tracking-wider font-bold px-2 py-1">UNASSIGNED</span>}
+                                                    </td>
                                                     <td style={{minWidth: '250px'}}>
-                                                        <Select 
+                                                        <Select menuPosition="fixed" menuPortalTarget={document.body} 
                                                             options={employeeOptions}
                                                             value={employeeOptions.find(opt => opt.value === c.assigned_employee_id)}
                                                             onChange={(selected) => handleAssignEmployee(c.id, selected.value)}
@@ -659,6 +766,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                         />
                                                     </td>
                                                     <td>
+                                                        <button className="nexus-btn" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}>History</button>
                                                         <button className="nexus-btn primary" onClick={() => { openEmailModal(c); }}>Email</button>
                                                     </td>
                                                 </tr>
@@ -668,7 +776,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </div>
                             ) : (
                                 <div className="customers-grid">
-                                    {lostCustomers.map(c => (
+                                        {paginatedLostCustomers.map(c => (
                                         <div key={c.id} className={`nexus-card ${c.assigned_employee_id ? 'bg-green-50 border-green-200' : ''}`}>
                                             <div className="customer-card-header">
                                                 <div className="nexus-user-info">
@@ -679,7 +787,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             </div>
                                             <div className="mt-4 mb-2 text-sm text-gray-500 font-medium">Assign Employee</div>
                                             <div className="mb-4">
-                                                <Select 
+                                                <Select menuPosition="fixed" menuPortalTarget={document.body} 
                                                     options={employeeOptions}
                                                     value={employeeOptions.find(opt => opt.value === c.assigned_employee_id)}
                                                     onChange={(selected) => handleAssignEmployee(c.id, selected.value)}
@@ -687,12 +795,14 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                                 />
                                             </div>
                                             <div className="flex gap-2">
+                                                <button className="nexus-btn w-full justify-center" onClick={() => { setHistoryTarget(c); setIsHistoryOpen(true); }}><ShoppingCart size={16}/> History</button>
                                                 <button className="nexus-btn w-full justify-center" onClick={() => { openEmailModal(c); }}><Mail size={16}/> Email</button>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
+                            <Pagination total={filteredLostCustomers.length} page={pageLostCustomers} setPage={setPageLostCustomers} />
                         </>
                     )}
 
@@ -703,9 +813,12 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <h1>Employees</h1>
                                     <p>KPI grows automatically when an assigned lost customer buys again.</p>
                                 </div>
-                                <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search employees..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
+                                    <div className="flex items-center bg-white border border-gray-200 rounded-lg overflow-hidden">
                                     <button className={`p-2 ${employeeView === 'list' ? 'bg-slate-100' : ''}`} onClick={() => setEmployeeView('list')}><List size={18}/></button>
                                     <button className={`p-2 ${employeeView === 'grid' ? 'bg-slate-100' : ''}`} onClick={() => setEmployeeView('grid')}><Grid size={18}/></button>
+                                </div>
                                 </div>
                             </div>
 
@@ -720,7 +833,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {employees.sort((a,b) => b.kpi_score - a.kpi_score).map(e => (
+                                            {paginatedEmployees.map(e => (
                                                 <tr key={e.id}>
                                                     <td className="font-medium">{e.first_name} {e.last_name}</td>
                                                     <td>{e.email}</td>
@@ -739,7 +852,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                 </div>
                             ) : (
                                 <div className="customers-grid">
-                                    {employees.sort((a,b) => b.kpi_score - a.kpi_score).map(e => (
+                                    {paginatedEmployees.map(e => (
                                         <div key={e.id} className="nexus-card">
                                             <div className="flex items-center gap-3 mb-4">
                                                 <div className="nexus-avatar bg-slate-900 text-white">
@@ -761,6 +874,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     ))}
                                 </div>
                             )}
+                            <Pagination total={filteredEmployees.length} page={pageEmployees} setPage={setPageEmployees} />
                         </>
                     )}
 
@@ -771,10 +885,13 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     <h1>Branches</h1>
                                     <p>Multi-location inventory and per-branch sales.</p>
                                 </div>
+                                <div className="flex gap-3 items-center">
+                                    <div className="relative flex items-center h-[38px]">                                        <Search className="absolute left-3 text-gray-400" size={16} />                                        <input type="text" placeholder="Search branches..." className="nexus-input !pl-9 h-full w-64 m-0" value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />                                    </div>
+                                </div>
                             </div>
 
                             <div className="customers-grid">
-                                {branches.map(branch => (
+                                {paginatedBranches.map(branch => (
                                     <div key={branch.id} className="nexus-card">
                                         <h3 className="font-bold text-lg mb-1">{branch.name}</h3>
                                         <p className="text-sm text-gray-500 flex items-center gap-1 mb-4"><MapPin size={14}/> {branch.address || 'Address not set'}</p>
@@ -787,10 +904,10 @@ export default function Dashboard({ products, employees, customers, sales, branc
                                     </div>
                                 ))}
                             </div>
+                            <Pagination total={filteredBranches.length} page={pageBranches} setPage={setPageBranches} />
                         </>
                     )}
                 </div>
-            </main>
 
             {/* POS Modal */}
             {isPosOpen && (
@@ -834,7 +951,7 @@ export default function Dashboard({ products, employees, customers, sales, branc
                             <div className="w-1/3 p-6 flex flex-col bg-white">
                                 <div className="nexus-form-group flex-shrink-0">
                                     <label>Customer</label>
-                                    <Select 
+                                    <Select menuPosition="fixed" menuPortalTarget={document.body} 
                                         options={customerOptions}
                                         value={selectedCustomer}
                                         onChange={(opt) => {
@@ -973,6 +1090,65 @@ export default function Dashboard({ products, employees, customers, sales, branc
             )}
 
             {/* Email Modal */}
+            
+            {/* History Modal */}
+            {isHistoryOpen && historyTarget && (
+                <div className="nexus-modal-overlay">
+                    <div className="nexus-modal max-w-2xl">
+                        <div className="nexus-modal-header">
+                            <h3 className="font-bold text-lg">Purchase History: {historyTarget.first_name} {historyTarget.last_name}</h3>
+                            <button className="nexus-icon-btn" onClick={() => setIsHistoryOpen(false)}>✕</button>
+                        </div>
+                        <div className="nexus-modal-body max-h-[60vh] overflow-y-auto">
+                            <div className="grid grid-cols-2 gap-4 mb-6">
+                                <div className="p-4 bg-slate-50 rounded-lg">
+                                    <div className="text-sm text-gray-500">Purchase Frequency</div>
+                                    <div className="text-2xl font-bold">{historyTarget.sales?.length || 0} Orders</div>
+                                </div>
+                                <div className="p-4 bg-slate-50 rounded-lg">
+                                    <div className="text-sm text-gray-500">Total Lifetime Value</div>
+                                    <div className="text-2xl font-bold">${historyTarget.sales?.reduce((sum, s) => sum + parseFloat(s.total_amount), 0).toFixed(2) || '0.00'}</div>
+                                </div>
+                            </div>
+                            <h4 className="font-bold mb-3">Recent Purchases</h4>
+                            {historyTarget.sales && historyTarget.sales.length > 0 ? (
+                                <table className="nexus-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Items</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {historyTarget.sales.map(sale => (
+                                            <tr key={sale.id}>
+                                                <td>{new Date(sale.created_at).toISOString().split('T')[0]}</td>
+                                                <td>
+                                                    <ul className="list-disc pl-4">
+                                                        {sale.items?.map(item => (
+                                                            <li key={item.id} className="text-sm text-gray-600">
+                                                                {item.quantity}x {item.product?.name}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </td>
+                                                <td className="font-bold">${parseFloat(sale.total_amount).toFixed(2)}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <p className="text-gray-500 italic">No purchase history found for this customer.</p>
+                            )}
+                        </div>
+                        <div className="mt-4 flex justify-end gap-3 border-t border-gray-100 pt-4">
+                            <button className="nexus-btn" onClick={() => setIsHistoryOpen(false)}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {isEmailOpen && emailTarget && (
                 <div className="nexus-modal-overlay">
                     <div className="nexus-modal max-w-[600px]">
@@ -1000,6 +1176,6 @@ export default function Dashboard({ products, employees, customers, sales, branc
                     </div>
                 </div>
             )}
-        </div>
+        </NexusLayout>
     );
 }

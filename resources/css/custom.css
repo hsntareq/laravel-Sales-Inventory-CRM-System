@@ -304,6 +304,16 @@ body {
     color: white;
 }
 
+.nexus-badge.solid-green {
+    background: #10b981;
+    color: white;
+}
+
+.nexus-badge.solid-gray {
+    background: #94a3b8;
+    color: white;
+}
+
 .nexus-badge.soft-gray {
     background: var(--border-light);
     color: var(--text-secondary);
