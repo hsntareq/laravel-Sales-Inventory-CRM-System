@@ -403,7 +403,14 @@ export default function Dashboard({ products, employees, customers, sales, branc
                 {/* Topbar */}
                 <header className="nexus-topbar relative">
                     <div className="nexus-search"></div>
-                    <div className="nexus-top-actions">
+                    <div className="nexus-top-actions flex items-center gap-4">
+                        <button 
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-full shadow-lg shadow-indigo-200 transition-all transform hover:-translate-y-0.5 flex items-center gap-2"
+                            onClick={() => setIsPosOpen(true)}
+                        >
+                            <ShoppingCart size={18} />
+                            <span>Open POS</span>
+                        </button>
                         <button className="nexus-icon-btn relative" onClick={() => setIsNotifOpen(!isNotifOpen)}>
                             <Bell size={20} />
                             <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
